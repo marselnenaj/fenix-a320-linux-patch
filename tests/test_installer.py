@@ -127,6 +127,18 @@ class InstallerTests(unittest.TestCase):
             if child.poll() is None: child.kill()
             child.wait(timeout=3)
 
+    def test_legacy_profile_can_open_installed_fenix_but_cannot_run_an_installer(self):
+        self.put(self.root / "private/fenix-compat.json", "{}")
+        self.put(self.prefix / core.PROGRAM / "Fenix.exe", "synthetic app")
+        with patch.object(core.subprocess, "run") as run:
+            core.windows_app(self.root)
+            core.Wine.return_value.reg.assert_called_with(r"HKCU\Software\Wine\Explorer", "ShowSystray", "0", "REG_DWORD")
+            self.assertEqual(run.call_args.args[0][-1], str(self.prefix / core.PROGRAM / "Fenix.exe"))
+            run.reset_mock()
+            with self.assertRaises(core.PatchError):
+                core.windows_app(self.root, "/not-an-installed-app.exe")
+            run.assert_not_called()
+
     def test_running_prefix_is_detected(self):
         process = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(20)"], env={**os.environ, "WINEPREFIX": str(self.prefix)})
         try:
