@@ -94,6 +94,39 @@ class InstallerTests(unittest.TestCase):
             with self.assertRaises(core.PatchError): core.install(self.root, self.bundle)
         self.assertFalse((self.root / core.MARKER).exists())
 
+    def test_interactive_waiter_retains_runtime_lock_through_shutdown(self):
+        core.install(self.root, self.bundle)
+        self.put(self.prefix / core.PROGRAM / "Fenix.exe", "synthetic app")
+        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+        def wait(process):
+            self.assertIs(process, child)
+            with (self.root / "private/play.lock").open("r+") as lock:
+                with self.assertRaises(BlockingIOError): fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            process.terminate()
+            process.wait(timeout=3)
+            return 0
+        try:
+            with patch.object(core.subprocess, "Popen", return_value=child):
+                core.windows_app(self.root, wait=wait)
+            with core.locked(self.root): pass
+        finally:
+            if child.poll() is None: child.kill()
+            child.wait(timeout=3)
+
+    def test_failed_interactive_waiter_reaps_child_and_releases_lock(self):
+        core.install(self.root, self.bundle)
+        self.put(self.prefix / core.PROGRAM / "Fenix.exe", "synthetic app")
+        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+        try:
+            with patch.object(core.subprocess, "Popen", return_value=child):
+                with self.assertRaisesRegex(RuntimeError, "wait failed"):
+                    core.windows_app(self.root, wait=lambda _: (_ for _ in ()).throw(RuntimeError("wait failed")))
+            self.assertIsNotNone(child.poll())
+            with core.locked(self.root): pass
+        finally:
+            if child.poll() is None: child.kill()
+            child.wait(timeout=3)
+
     def test_running_prefix_is_detected(self):
         process = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(20)"], env={**os.environ, "WINEPREFIX": str(self.prefix)})
         try:
