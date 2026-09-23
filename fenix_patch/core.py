@@ -307,6 +307,26 @@ def prepare_framework(wine, cache, progress):
         raise PatchError("Microsoft .NET Framework 4.8 was not detected after setup.")
 
 
+def ensure_ui_fonts(prefix, runner, wine):
+    # Chromium's Windows UI font fallback can recurse until its stack overflows
+    # if Tahoma is absent from the 64-bit DirectWrite font collection. Old
+    # profiles may contain the files and only the 32-bit registry entries.
+    registry = regular(prefix / "system.reg", 64 * 1024 * 1024).read_text(errors="replace")
+    section = re.search(r"(?m)^\[Software\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Fonts\][^\[]*", registry)
+    entries = section.group(0) if section else ""
+    for name, family in (("tahoma.ttf", "Tahoma"), ("tahomabd.ttf", "Tahoma Bold")):
+        value = family + " (TrueType)"
+        if re.search(r'(?m)^"' + re.escape(value) + r'"="[^"\r\n]+"', entries):
+            continue
+        target = contained(prefix, "drive_c/windows/Fonts/" + name)
+        if not target.exists():
+            source = regular(runner / "files/share/wine/fonts" / name)
+            atomic(target, source.read_bytes(), 0o644)
+        regular(target)
+        wine.run("reg", "add", r"HKLM\Software\Microsoft\Windows NT\CurrentVersion\Fonts",
+                 "/v", value, "/t", "REG_SZ", "/d", name, "/f", "/reg:64")
+
+
 def graphics_and_fonts(prefix, runner, wine):
     for arch, folder in (("x86_64", "system32"), ("i386", "syswow64")):
         for name in ("libvkd3d-1.dll", "libvkd3d-shader-1.dll", "libvkd3d-utils-1.dll"):
@@ -319,6 +339,7 @@ def graphics_and_fonts(prefix, runner, wine):
         source = regular(runner / "files/share/fonts" / name)
         atomic(contained(prefix, "drive_c/windows/Fonts/" + name), source.read_bytes(), 0o644)
         wine.reg(r"HKLM\Software\Microsoft\Windows NT\CurrentVersion\Fonts", family + " (TrueType)", name)
+    ensure_ui_fonts(prefix, runner, wine)
     wine.reg(r"HKCU\Software\Microsoft\Avalon.Graphics", "DisableHWAcceleration", "1", "REG_DWORD")
     wine.reg(r"HKCU\Software\Wine\Explorer", "ShowSystray", "0", "REG_DWORD")
 
@@ -582,10 +603,12 @@ def windows_app(runtime, executable=None, progress=lambda _: None, *, manager=Fa
         path = root / "private/fenix-app.log"
         fd = os.open(path, os.O_CREAT | os.O_APPEND | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
         try:
+            wine = Wine(prefix, runner, fd)
+            ensure_ui_fonts(prefix, runner, wine)
             # Wine's fallback notification area otherwise becomes a separate
             # blank window on desktops without an XEmbed tray. Scope to this
             # runtime; the main Fenix UI remains available through Flightdeck.
-            Wine(prefix, runner, fd).reg(r"HKCU\Software\Wine\Explorer", "ShowSystray", "0", "REG_DWORD")
+            wine.reg(r"HKCU\Software\Wine\Explorer", "ShowSystray", "0", "REG_DWORD")
             progress("Fenix is open. Complete its setup or sign-in, then close the application to continue.")
             args = [str(runner / "files/bin/wine"), str(app)]
             options = dict(cwd=app.parent, env=wine_env(prefix, runner), stdin=subprocess.DEVNULL,

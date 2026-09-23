@@ -7,7 +7,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import xml.etree.ElementTree as ET
 
 from fenix_patch import core
@@ -31,6 +31,8 @@ class InstallerTests(unittest.TestCase):
         (self.root / "runner").symlink_to(self.runner)
         self.put(self.runner / "version", "fixture version")
         self.put(self.runner / "files/bin/wine", "fixture Wine")
+        self.put(self.runner / "files/share/wine/fonts/tahoma.ttf", "fixture Tahoma")
+        self.put(self.runner / "files/share/wine/fonts/tahomabd.ttf", "fixture Tahoma Bold")
         files = ("files/lib/wine/x86_64-windows/ntdll.dll", "files/bin/wineserver")
         for name in files:
             self.put(self.runner / name, "old " + name)
@@ -134,10 +136,31 @@ class InstallerTests(unittest.TestCase):
             core.windows_app(self.root)
             core.Wine.return_value.reg.assert_called_with(r"HKCU\Software\Wine\Explorer", "ShowSystray", "0", "REG_DWORD")
             self.assertEqual(run.call_args.args[0][-1], str(self.prefix / core.PROGRAM / "Fenix.exe"))
+            self.assertTrue(any(call.args[-1] == "/reg:64" for call in core.Wine.return_value.run.call_args_list))
             run.reset_mock()
             with self.assertRaises(core.PatchError):
                 core.windows_app(self.root, "/not-an-installed-app.exe")
             run.assert_not_called()
+
+    def test_ui_fonts_repair_32_bit_only_registration_and_preserve_existing_files(self):
+        self.put(self.prefix / "system.reg", '[Software\\\\Wow6432Node\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Fonts]\n"Tahoma (TrueType)"="old-font.ttf"\n')
+        existing = self.prefix / "drive_c/windows/Fonts/tahoma.ttf"
+        self.put(existing, "user's existing Tahoma")
+        wine = Mock()
+        core.ensure_ui_fonts(self.prefix, self.runner, wine)
+        self.assertEqual(existing.read_text(), "user's existing Tahoma")
+        self.assertEqual((existing.parent / "tahomabd.ttf").read_text(), "fixture Tahoma Bold")
+        self.assertEqual(wine.run.call_count, 2)
+        self.assertEqual([c.args[c.args.index('/v') + 1] for c in wine.run.call_args_list],
+                         ["Tahoma (TrueType)", "Tahoma Bold (TrueType)"])
+        self.assertTrue(all(c.args[-1] == "/reg:64" for c in wine.run.call_args_list))
+
+    def test_ui_fonts_leave_registered_fonts_unchanged(self):
+        self.put(self.prefix / "system.reg", '[Software\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\Fonts] 1\n"Tahoma (TrueType)"="custom-regular.ttf"\n"Tahoma Bold (TrueType)"="custom-bold.ttf"\n')
+        wine = Mock()
+        core.ensure_ui_fonts(self.prefix, self.runner, wine)
+        wine.run.assert_not_called()
+        self.assertFalse((self.prefix / "drive_c/windows/Fonts").exists())
 
     def test_running_prefix_is_detected(self):
         process = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(20)"], env={**os.environ, "WINEPREFIX": str(self.prefix)})
