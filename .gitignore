@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+/payload/
+/sources/
+/build/
+/dist/
+/integration/FenixWindowGuard.exe
+*.egg-info/

@@ -1,0 +1,67 @@
+--- a/dlls/dwrite/font.c
++++ b/dlls/dwrite/font.c
+@@ -1093,6 +1093,26 @@
+     dst->y = src->y + offset->y;
+ }
+ 
++static INIT_ONCE outline_scope_once = INIT_ONCE_STATIC_INIT;
++static BOOL unhinted_outlines;
++
++static BOOL CALLBACK init_outline_scope(INIT_ONCE *once, void *parameter, void **result)
++{
++    WCHAR scope[512], path[MAX_PATH], *base, *name, *end;
++    DWORD length = GetEnvironmentVariableW(L"WINE_DWRITE_UNHINTED_OUTLINES", scope, ARRAY_SIZE(scope));
++
++    if (!length || length >= ARRAY_SIZE(scope)) return TRUE;
++    if (!wcscmp(scope, L"1")) { unhinted_outlines = TRUE; return TRUE; }
++    if (!GetModuleFileNameW(NULL, path, ARRAY_SIZE(path))) return TRUE;
++    base = wcsrchr(path, L'\\'); base = base ? base + 1 : path;
++    for (name = scope; name && *name; name = end)
++    {
++        if ((end = wcschr(name, L';'))) *end++ = 0;
++        if (!wcsicmp(name, base)) { unhinted_outlines = TRUE; break; }
++    }
++    return TRUE;
++}
++
+ static HRESULT WINAPI dwritefontface_GetGlyphRunOutline(IDWriteFontFace5 *iface, FLOAT emSize,
+     UINT16 const *glyphs, FLOAT const* advances, DWRITE_GLYPH_OFFSET const *offsets,
+     UINT32 count, BOOL is_sideways, BOOL is_rtl, IDWriteGeometrySink *sink)
+@@ -1142,6 +1162,8 @@
+ 
+     params.object = fontface->get_font_object(fontface);
+     params.simulations = fontface->simulations;
++    InitOnceExecuteOnce(&outline_scope_once, init_outline_scope, NULL, NULL);
++    if (unhinted_outlines) params.simulations |= DWRITE_OUTLINE_NO_HINTING;
+     params.emsize = emSize;
+ 
+     for (i = 0; i < count; ++i)
+--- a/dlls/dwrite/freetype.c
++++ b/dlls/dwrite/freetype.c
+@@ -445,11 +445,13 @@
+     struct get_glyph_outline_params *params = args;
+     FT_Face face = FaceFromObject(params->object);
+     FT_Size size;
++    FT_Int32 flags = FT_LOAD_NO_BITMAP;
+ 
+     if (!(size = freetype_set_face_size(face, params->emsize)))
+         return STATUS_UNSUCCESSFUL;
+ 
+-    if (!pFT_Load_Glyph(face, params->glyph, FT_LOAD_NO_BITMAP))
++    if (params->simulations & DWRITE_OUTLINE_NO_HINTING) flags |= FT_LOAD_NO_HINTING | FT_LOAD_NO_AUTOHINT;
++    if (!pFT_Load_Glyph(face, params->glyph, flags))
+     {
+         FT_Outline *ft_outline = &face->glyph->outline;
+         FT_Matrix m;
+--- a/dlls/dwrite/unixlib.h
++++ b/dlls/dwrite/unixlib.h
+@@ -35,6 +35,9 @@
+ {
+     UINT64 object;
+ };
++
++/* Internal outline-only flag; keeps the existing PE/Unix and WoW64 layouts. */
++#define DWRITE_OUTLINE_NO_HINTING 0x80000000u
+ 
+ struct get_glyph_outline_params
+ {

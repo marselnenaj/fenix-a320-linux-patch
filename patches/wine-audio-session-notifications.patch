@@ -1,0 +1,313 @@
+--- a/dlls/mmdevapi/audiosessionmanager.c
++++ b/dlls/mmdevapi/audiosessionmanager.c
+@@ -48,10 +48,102 @@
+     LeaveCriticalSection(&g_sessions_lock);
+ }
+ 
++struct session_mgr
++{
++    IAudioSessionManager2 IAudioSessionManager2_iface;
++    IMMDevice *device;
++    LONG ref;
++    struct list entry, notifications;
++    BOOL notifications_enabled;
++};
++
++struct session_notification
++{
++    struct list entry;
++    IAudioSessionNotification *callback;
++    LONG ref;
++    BOOL registered;
++};
++
++static struct list session_managers = LIST_INIT(session_managers);
++
++static void release_notification(struct session_notification *notification)
++{
++    if (!InterlockedDecrement(&notification->ref))
++    {
++        IAudioSessionNotification_Release(notification->callback);
++        free(notification);
++    }
++}
++
++struct session_notification_work
++{
++    struct session_mgr *manager;
++    struct session_notification *notification;
++    IAudioSessionControl *control;
++};
++
++static DWORD WINAPI deliver_session_notification(void *arg)
++{
++    struct session_notification_work *work = arg;
++    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
++    BOOL registered;
++
++    sessions_lock();
++    registered = work->notification->registered;
++    sessions_unlock();
++    if (SUCCEEDED(hr) && registered)
++        IAudioSessionNotification_OnSessionCreated(work->notification->callback, work->control);
++    IAudioSessionControl_Release(work->control);
++    release_notification(work->notification);
++    IAudioSessionManager2_Release(&work->manager->IAudioSessionManager2_iface);
++    free(work);
++    if (SUCCEEDED(hr)) CoUninitialize();
++    return 0;
++}
++
++void notify_audio_session_created(struct audio_session *session)
++{
++    struct session_mgr *manager;
++    struct session_notification *notification;
++
++    sessions_lock();
++    LIST_FOR_EACH_ENTRY(manager, &session_managers, struct session_mgr, entry)
++    {
++        if (manager->device != session->device || !manager->notifications_enabled) continue;
++        LIST_FOR_EACH_ENTRY(notification, &manager->notifications, struct session_notification, entry)
++        {
++            struct session_notification_work *work;
++            struct audio_session_wrapper *wrapper;
++            if (!(work = malloc(sizeof(*work)))) continue;
++            if (!(wrapper = session_wrapper_create(NULL)))
++            {
++                free(work);
++                continue;
++            }
++            wrapper->session = session;
++            work->manager = manager;
++            work->notification = notification;
++            work->control = (IAudioSessionControl *)&wrapper->IAudioSessionControl2_iface;
++            IAudioSessionManager2_AddRef(&manager->IAudioSessionManager2_iface);
++            InterlockedIncrement(&notification->ref);
++            if (!QueueUserWorkItem(deliver_session_notification, work, WT_EXECUTEDEFAULT))
++            {
++                IAudioSessionControl_Release(work->control);
++                release_notification(notification);
++                IAudioSessionManager2_Release(&manager->IAudioSessionManager2_iface);
++                free(work);
++            }
++        }
++    }
++    sessions_unlock();
++}
++
+ struct session_enum
+ {
+     IAudioSessionEnumerator IAudioSessionEnumerator_iface;
+     IMMDevice *device;
++    struct session_mgr *manager;
+     GUID *sessions;
+     int session_count;
+     LONG ref;
+@@ -101,6 +193,7 @@
+ 
+     if (!ref)
+     {
++        IAudioSessionManager2_Release(&enumerator->manager->IAudioSessionManager2_iface);
+         IMMDevice_Release(enumerator->device);
+         free(enumerator->sessions);
+         free(enumerator);
+@@ -117,6 +210,9 @@
+ 
+     if (!count) return E_POINTER;
+     *count = enumerator->session_count;
++    sessions_lock();
++    enumerator->manager->notifications_enabled = TRUE;
++    sessions_unlock();
+     return S_OK;
+ }
+ 
+@@ -151,11 +247,14 @@
+     enumerator_GetSession,
+ };
+ 
+-static HRESULT create_session_enumerator(IMMDevice *device, IAudioSessionEnumerator **ppv)
++static HRESULT create_session_enumerator(struct session_mgr *manager, IAudioSessionEnumerator **ppv)
+ {
+     struct session_enum *enumerator;
++    IMMDevice *device = manager->device;
+     HRESULT hr;
+ 
++    if (!ppv) return E_POINTER;
++    *ppv = NULL;
+     if (!(enumerator = calloc(1, sizeof(*enumerator))))
+         return E_OUTOFMEMORY;
+ 
+@@ -170,17 +269,12 @@
+     enumerator->IAudioSessionEnumerator_iface.lpVtbl = &IAudioSessionEnumerator_vtbl;
+     IMMDevice_AddRef(device);
+     enumerator->device = device;
++    IAudioSessionManager2_AddRef(&manager->IAudioSessionManager2_iface);
++    enumerator->manager = manager;
+     enumerator->ref = 1;
+     *ppv = &enumerator->IAudioSessionEnumerator_iface;
+     return S_OK;
+ }
+-
+-struct session_mgr
+-{
+-    IAudioSessionManager2 IAudioSessionManager2_iface;
+-    IMMDevice *device;
+-    LONG ref;
+-};
+ 
+ static inline struct session_mgr *impl_from_IAudioSessionManager2(IAudioSessionManager2 *iface)
+ {
+@@ -220,11 +314,32 @@
+ static ULONG WINAPI ASM_Release(IAudioSessionManager2 *iface)
+ {
+     struct session_mgr *This = impl_from_IAudioSessionManager2(iface);
+-    ULONG ref = InterlockedDecrement(&This->ref);
++    struct session_notification *notification, *next;
++    struct list notifications;
++    ULONG ref;
++
++    list_init(&notifications);
++    sessions_lock();
++    ref = InterlockedDecrement(&This->ref);
+     TRACE("(%p) new ref %lu\n", This, ref);
+-
+     if (!ref)
++    {
++        list_remove(&This->entry);
++        LIST_FOR_EACH_ENTRY(notification, &This->notifications, struct session_notification, entry)
++            notification->registered = FALSE;
++        list_move_tail(&notifications, &This->notifications);
++    }
++    sessions_unlock();
++    if (!ref)
++    {
++        LIST_FOR_EACH_ENTRY_SAFE(notification, next, &notifications, struct session_notification, entry)
++        {
++            list_remove(&notification->entry);
++            release_notification(notification);
++        }
++        IMMDevice_Release(This->device);
+         free(This);
++    }
+ 
+     return ref;
+ }
+@@ -239,7 +354,10 @@
+ 
+     TRACE("(%p)->(%s, %lx, %p)\n", This, debugstr_guid(guid), flags, out);
+ 
++    if (!out) return E_POINTER;
++    sessions_lock();
+     hr = get_audio_session_wrapper(guid, This->device, &wrapper);
++    sessions_unlock();
+     if (FAILED(hr))
+         return hr;
+ 
+@@ -258,7 +376,10 @@
+ 
+     TRACE("(%p)->(%s, %lx, %p)\n", This, debugstr_guid(guid), flags, out);
+ 
++    if (!out) return E_POINTER;
++    sessions_lock();
+     hr = get_audio_session_wrapper(guid, This->device, &wrapper);
++    sessions_unlock();
+     if (FAILED(hr))
+         return hr;
+ 
+@@ -274,23 +395,60 @@
+ 
+     TRACE("(%p)->(%p).\n", This, out);
+ 
+-    return create_session_enumerator(This->device, out);
++    return create_session_enumerator(This, out);
+ }
+ 
+ static HRESULT WINAPI ASM_RegisterSessionNotification(IAudioSessionManager2 *iface,
+                                                       IAudioSessionNotification *notification)
+ {
+     struct session_mgr *This = impl_from_IAudioSessionManager2(iface);
+-    FIXME("(%p)->(%p) - stub\n", This, notification);
+-    return E_NOTIMPL;
++    struct session_notification *entry;
++    TRACE("(%p)->(%p)\n", This, notification);
++    if (!notification) return E_POINTER;
++    sessions_lock();
++    LIST_FOR_EACH_ENTRY(entry, &This->notifications, struct session_notification, entry)
++    {
++        if (entry->callback == notification)
++        {
++            sessions_unlock();
++            return S_OK;
++        }
++    }
++    if (!(entry = malloc(sizeof(*entry))))
++    {
++        sessions_unlock();
++        return E_OUTOFMEMORY;
++    }
++    entry->callback = notification;
++    entry->ref = 1;
++    entry->registered = TRUE;
++    IAudioSessionNotification_AddRef(notification);
++    list_add_tail(&This->notifications, &entry->entry);
++    sessions_unlock();
++    return S_OK;
+ }
+ 
+ static HRESULT WINAPI ASM_UnregisterSessionNotification(IAudioSessionManager2 *iface,
+                                                         IAudioSessionNotification *notification)
+ {
+     struct session_mgr *This = impl_from_IAudioSessionManager2(iface);
+-    FIXME("(%p)->(%p) - stub\n", This, notification);
+-    return E_NOTIMPL;
++    struct session_notification *entry;
++    TRACE("(%p)->(%p)\n", This, notification);
++    if (!notification) return E_POINTER;
++    sessions_lock();
++    LIST_FOR_EACH_ENTRY(entry, &This->notifications, struct session_notification, entry)
++    {
++        if (entry->callback == notification)
++        {
++            entry->registered = FALSE;
++            list_remove(&entry->entry);
++            sessions_unlock();
++            release_notification(entry);
++            return S_OK;
++        }
++    }
++    sessions_unlock();
++    return S_OK;
+ }
+ 
+ static HRESULT WINAPI ASM_RegisterDuckNotification(IAudioSessionManager2 *iface,
+@@ -334,7 +492,12 @@
+ 
+     This->IAudioSessionManager2_iface.lpVtbl = &AudioSessionManager2_Vtbl;
+     This->device = device;
++    IMMDevice_AddRef(device);
+     This->ref = 1;
++    list_init(&This->notifications);
++    sessions_lock();
++    list_add_tail(&session_managers, &This->entry);
++    sessions_unlock();
+ 
+     *ppv = &This->IAudioSessionManager2_iface;
+ 
+--- a/dlls/mmdevapi/session.c
++++ b/dlls/mmdevapi/session.c
+@@ -692,6 +692,7 @@
+ 
+     CoCreateGuid(&ret->grouping_param);
+ 
++    notify_audio_session_created(ret);
+     return ret;
+ }
+ 
+--- a/dlls/mmdevapi/mmdevapi_private.h
++++ b/dlls/mmdevapi/mmdevapi_private.h
+@@ -134,3 +134,5 @@
+ extern const WCHAR drv_keyW[];
+ 
+ extern HRESULT get_audio_sessions(IMMDevice *device, GUID **ret, int *ret_count);
++extern void notify_audio_session_created(struct audio_session *session);
++extern struct audio_session_wrapper *session_wrapper_create(struct audio_client *client);

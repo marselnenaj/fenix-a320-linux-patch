@@ -1,0 +1,45 @@
+--- a/server/completion.c
++++ b/server/completion.c
+@@ -243,7 +243,11 @@
+         close_handle( thread->process, thread->completion_wait->handle );
+         thread->completion_wait->handle = 0;
+     }
+-    if (thread->completion_wait->completion) list_remove( &thread->completion_wait->wait_queue_entry );
++    if (thread->completion_wait->completion)
++    {
++        list_remove( &thread->completion_wait->wait_queue_entry );
++        thread->completion_wait->completion = NULL;
++    }
+     release_object( &thread->completion_wait->obj );
+     thread->completion_wait = NULL;
+ }
+@@ -300,6 +304,7 @@
+ {
+     struct comp_msg *msg = mem_alloc( sizeof( *msg ) );
+     struct completion_wait *wait;
++    struct list *ptr;
+ 
+     if (!msg)
+         return;
+@@ -311,9 +316,19 @@
+ 
+     list_add_tail( &completion->queue, &msg->queue_entry );
+     completion->depth++;
+-    LIST_FOR_EACH_ENTRY( wait, &completion->wait_queue, struct completion_wait, wait_queue_entry )
+-    {
++    ptr = list_head( &completion->wait_queue );
++    while (ptr)
++    {
++        wait = LIST_ENTRY( ptr, struct completion_wait, wait_queue_entry );
++        /* A failed wakeup can kill the client thread and drop its last wait
++         * reference. Keep the object alive until wake_up has finished, and
++         * restart traversal if thread cleanup removed it from the queue. */
++        grab_object( wait );
+         wake_up( &wait->obj, 1 );
++        ptr = wait->completion == completion
++            ? list_next( &completion->wait_queue, &wait->wait_queue_entry )
++            : list_head( &completion->wait_queue );
++        release_object( wait );
+         if (list_empty( &completion->queue )) return;
+     }
+     if (!list_empty( &completion->queue )) signal_sync( completion->sync );

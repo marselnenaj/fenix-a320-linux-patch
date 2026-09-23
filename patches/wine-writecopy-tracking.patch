@@ -1,0 +1,106 @@
+--- a/dlls/ntdll/unix/virtual.c
++++ b/dlls/ntdll/unix/virtual.c
+@@ -294,6 +294,8 @@
+ 
+ static struct wine_rb_tree views_tree;
+ static pthread_mutex_t virtual_mutex;
++/* Opt-in while validating Windows copy-on-write protection transitions. */
++static BOOL track_writecopy;
+ 
+ static const UINT page_shift = 12;
+ static const UINT_PTR page_mask = 0xfff;
+@@ -1522,6 +1524,7 @@
+         if (vprot & VPROT_WRITE) prot |= PROT_WRITE | PROT_READ;
+         if (vprot & VPROT_WRITECOPY) prot |= PROT_WRITE | PROT_READ;
+         if (vprot & VPROT_EXEC) prot |= PROT_EXEC | PROT_READ;
++        if (track_writecopy && (vprot & VPROT_WRITECOPY) && !(vprot & VPROT_COPIED)) prot &= ~PROT_WRITE;
+         if (vprot & VPROT_WRITEWATCH) prot &= ~PROT_WRITE;
+     }
+     if (!prot) prot = PROT_NONE;
+@@ -4879,6 +4882,42 @@
+ }
+ 
+ 
++/* Enable after the PE exception dispatcher is available. */
++void virtual_enable_writecopy_tracking( void )
++{
++    const char *env = getenv( "WINE_TRACK_WRITECOPY" );
++    const WCHAR *image, *name;
++    const char *entry, *end;
++    unsigned int i, len;
++
++    track_writecopy = env && atoi( env );
++    if (!env || strncmp( env, "apps:", 5 )) return;
++    if (!NtCurrentTeb()->Peb->ProcessParameters) return;
++    image = NtCurrentTeb()->Peb->ProcessParameters->ImagePathName.Buffer;
++    if (!image) return;
++    name = wcsrchr( image, '\\' );
++    name = name ? name + 1 : image;
++    len = wcslen( name );
++    for (entry = env + 5; *entry; entry = *end ? end + 1 : end)
++    {
++        end = strchr( entry, ',' );
++        if (!end) end = entry + strlen( entry );
++        if (end - entry != len) continue;
++        for (i = 0; i < len; i++)
++        {
++            unsigned int a = (unsigned char)entry[i], b = name[i];
++            if (a >= 'A' && a <= 'Z') a += 'a' - 'A';
++            if (b >= 'A' && b <= 'Z') b += 'a' - 'A';
++            if (a != b) break;
++        }
++        if (i == len)
++        {
++            track_writecopy = TRUE;
++            return;
++        }
++    }
++}
++
+ /***********************************************************************
+  *           virtual_handle_fault
+  */
+@@ -4915,6 +4954,13 @@
+     }
+     else if (err == EXCEPTION_WRITE_FAULT)
+     {
++        if (track_writecopy && (vprot & (VPROT_COMMITTED | VPROT_WRITECOPY | VPROT_COPIED)) ==
++                              (VPROT_COMMITTED | VPROT_WRITECOPY) &&
++            !(enable_write_exceptions && is_vprot_exec_write( vprot ) && !ntdll_get_thread_data()->allow_writes))
++        {
++            set_page_vprot_bits( page, host_page_size, VPROT_COPIED, 0 );
++            mprotect_range( page, host_page_size, 0, 0 );
++        }
+         if (vprot & VPROT_WRITEWATCH)
+         {
+             if (enable_write_exceptions && is_vprot_exec_write( vprot ) && !ntdll_get_thread_data()->allow_writes)
+@@ -4932,7 +4978,8 @@
+         /* ignore fault if page is writable now */
+         if (get_unix_prot( get_host_page_vprot( page )) & PROT_WRITE)
+         {
+-            if ((vprot & VPROT_WRITEWATCH) || is_write_watch_range( page, 1 ))
++            if ((vprot & VPROT_WRITEWATCH) || is_write_watch_range( page, 1 ) ||
++                (track_writecopy && (vprot & VPROT_WRITECOPY)))
+                 ret = STATUS_SUCCESS;
+         }
+     }
+--- a/dlls/ntdll/unix/unix_private.h
++++ b/dlls/ntdll/unix/unix_private.h
+@@ -213,6 +213,7 @@
+ extern BOOL fsync_help_simulated_pulse;
+ extern BOOL localsystem_sid;
+ extern BOOL simulate_writecopy;
++extern void virtual_enable_writecopy_tracking(void);
+ extern long long ram_reporting_bias;
+ extern BOOL wine_allocs_2g_limit;
+ extern char *release_reserved_memory_low_bound;
+--- a/dlls/ntdll/unix/loader.c
++++ b/dlls/ntdll/unix/loader.c
+@@ -2540,6 +2540,7 @@
+     load_ntdll();
+     load_wow64_ntdll( main_image_info.Machine );
+     load_apiset_dll();
++    virtual_enable_writecopy_tracking();
+     mallopt( M_PERTURB, 0 );
+     server_init_process_done();
+ }

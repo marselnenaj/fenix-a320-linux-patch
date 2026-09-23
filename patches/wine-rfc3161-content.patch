@@ -1,0 +1,43 @@
+--- a/dlls/crypt32/msg.c
++++ b/dlls/crypt32/msg.c
+@@ -2438,6 +2438,14 @@
+     return CRYPT_ConstructBlob(&msg->u.enveloped_data.content, content);
+ }
+ 
++static BOOL CDecodeMsg_IsOctetStringContent(const char *oid)
++{
++    /* RFC 3161 TSTInfo uses CMS EncapsulatedContentInfo: eContent is an
++     * OCTET STRING containing DER TSTInfo. Hash and return its octets, as
++     * for id-data, rather than including the OCTET STRING wrapper. */
++    return !strcmp(oid, szOID_RSA_data) || !strcmp(oid, "1.2.840.113549.1.9.16.1.4");
++}
++
+ static BOOL CDecodeMsg_FinalizeSignedContent(CDecodeMsg *msg,
+  CRYPT_DER_BLOB *blob)
+ {
+@@ -2463,12 +2471,11 @@
+             content = &msg->u.signed_data.info->content.Content;
+         if (content->cbData)
+         {
+-            /* If the message is not detached, have to decode the message's
+-             * content if the type is szOID_RSA_data.
++            /* Decode encapsulated OCTET STRING content for non-detached
++             * id-data and RFC 3161 timestamp messages.
+              */
+             if (!(msg->base.open_flags & CMSG_DETACHED_FLAG) &&
+-             !strcmp(msg->u.signed_data.info->content.pszObjId,
+-             szOID_RSA_data))
++             CDecodeMsg_IsOctetStringContent(msg->u.signed_data.info->content.pszObjId))
+             {
+                 CRYPT_DATA_BLOB *rsa_blob;
+ 
+@@ -3080,8 +3087,7 @@
+     case CMSG_CONTENT_PARAM:
+         if (msg->u.signed_data.info)
+         {
+-            if (!strcmp(msg->u.signed_data.info->content.pszObjId,
+-             szOID_RSA_data))
++            if (CDecodeMsg_IsOctetStringContent(msg->u.signed_data.info->content.pszObjId))
+             {
+                 CRYPT_DATA_BLOB *blob;
+                 DWORD size;

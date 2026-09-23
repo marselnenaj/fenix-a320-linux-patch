@@ -1,0 +1,242 @@
+--- a/dlls/d2d1/geometry.c
++++ b/dlls/d2d1/geometry.c
+@@ -20,6 +20,161 @@
+ #include <float.h>
+ 
+ WINE_DEFAULT_DEBUG_CHANNEL(d2d);
++
++/* Optional geometry-only interoperability with a separately installed native
++ * Direct2D implementation. Rendering and all public objects stay in Wine.
++ * WINE_D2D1_GEOMETRY_PROVIDER accepts one executable basename or 1 for tests. */
++static INIT_ONCE geometry_provider_once = INIT_ONCE_STATIC_INIT;
++static ID2D1Factory *geometry_provider_factory;
++
++static BOOL CALLBACK d2d_geometry_provider_init(INIT_ONCE *once, void *parameter, void **context)
++{
++    HRESULT (WINAPI *create_factory)(D2D1_FACTORY_TYPE, REFIID, const D2D1_FACTORY_OPTIONS *, void **);
++    WCHAR enabled[MAX_PATH], executable[MAX_PATH], *basename;
++    DWORD length;
++    HMODULE module;
++    HRESULT hr;
++
++    length = GetEnvironmentVariableW(L"WINE_D2D1_GEOMETRY_PROVIDER", enabled, ARRAY_SIZE(enabled));
++    if (!length || length >= ARRAY_SIZE(enabled)) return TRUE;
++    if (lstrcmpW(enabled, L"1"))
++    {
++        length = GetModuleFileNameW(NULL, executable, ARRAY_SIZE(executable));
++        if (!length || length >= ARRAY_SIZE(executable)) return TRUE;
++        basename = wcsrchr(executable, '\\');
++        if (lstrcmpiW(enabled, basename ? basename + 1 : executable)) return TRUE;
++    }
++
++    if (!(module = LoadLibraryExW(L"d2d1_geometry.dll", NULL, LOAD_LIBRARY_SEARCH_SYSTEM32)))
++        return TRUE;
++    if (!(create_factory = (void *)GetProcAddress(module, "D2D1CreateFactory")))
++    {
++        FreeLibrary(module);
++        return TRUE;
++    }
++    hr = create_factory(D2D1_FACTORY_TYPE_MULTI_THREADED, &IID_ID2D1Factory, NULL,
++            (void **)&geometry_provider_factory);
++    if (FAILED(hr))
++    {
++        geometry_provider_factory = NULL;
++        FreeLibrary(module);
++    }
++    /* The shared factory and its module live for this process's lifetime. */
++    return TRUE;
++}
++
++static HRESULT d2d_geometry_provider_copy(ID2D1Geometry *source, ID2D1Geometry **result)
++{
++    ID2D1RectangleGeometry *rectangle;
++    ID2D1RoundedRectangleGeometry *rounded;
++    ID2D1EllipseGeometry *ellipse;
++    ID2D1TransformedGeometry *transformed;
++    ID2D1GeometryGroup *group;
++    ID2D1PathGeometry *path;
++    ID2D1GeometrySink *sink;
++    HRESULT hr, close_hr;
++
++    *result = NULL;
++    if (SUCCEEDED(ID2D1Geometry_QueryInterface(source, &IID_ID2D1RectangleGeometry, (void **)&rectangle)))
++    {
++        D2D1_RECT_F rect;
++        ID2D1RectangleGeometry_GetRect(rectangle, &rect);
++        ID2D1RectangleGeometry_Release(rectangle);
++        return ID2D1Factory_CreateRectangleGeometry(geometry_provider_factory, &rect,
++                (ID2D1RectangleGeometry **)result);
++    }
++    if (SUCCEEDED(ID2D1Geometry_QueryInterface(source, &IID_ID2D1RoundedRectangleGeometry, (void **)&rounded)))
++    {
++        D2D1_ROUNDED_RECT rect;
++        ID2D1RoundedRectangleGeometry_GetRoundedRect(rounded, &rect);
++        ID2D1RoundedRectangleGeometry_Release(rounded);
++        return ID2D1Factory_CreateRoundedRectangleGeometry(geometry_provider_factory, &rect,
++                (ID2D1RoundedRectangleGeometry **)result);
++    }
++    if (SUCCEEDED(ID2D1Geometry_QueryInterface(source, &IID_ID2D1EllipseGeometry, (void **)&ellipse)))
++    {
++        D2D1_ELLIPSE shape;
++        ID2D1EllipseGeometry_GetEllipse(ellipse, &shape);
++        ID2D1EllipseGeometry_Release(ellipse);
++        return ID2D1Factory_CreateEllipseGeometry(geometry_provider_factory, &shape,
++                (ID2D1EllipseGeometry **)result);
++    }
++    if (SUCCEEDED(ID2D1Geometry_QueryInterface(source, &IID_ID2D1TransformedGeometry, (void **)&transformed)))
++    {
++        ID2D1Geometry *original, *copy;
++        D2D1_MATRIX_3X2_F transform;
++        ID2D1TransformedGeometry_GetSourceGeometry(transformed, &original);
++        ID2D1TransformedGeometry_GetTransform(transformed, &transform);
++        ID2D1TransformedGeometry_Release(transformed);
++        hr = d2d_geometry_provider_copy(original, &copy);
++        ID2D1Geometry_Release(original);
++        if (FAILED(hr)) return hr;
++        hr = ID2D1Factory_CreateTransformedGeometry(geometry_provider_factory, copy, &transform,
++                (ID2D1TransformedGeometry **)result);
++        ID2D1Geometry_Release(copy);
++        return hr;
++    }
++    if (SUCCEEDED(ID2D1Geometry_QueryInterface(source, &IID_ID2D1GeometryGroup, (void **)&group)))
++    {
++        UINT32 i, count = ID2D1GeometryGroup_GetSourceGeometryCount(group);
++        ID2D1Geometry **originals = calloc(count ? count : 1, sizeof(*originals));
++        ID2D1Geometry **copies = calloc(count ? count : 1, sizeof(*copies));
++        if (!originals || !copies)
++            hr = E_OUTOFMEMORY;
++        else
++        {
++            ID2D1GeometryGroup_GetSourceGeometries(group, originals, count);
++            hr = S_OK;
++            for (i = 0; i < count && SUCCEEDED(hr); ++i)
++                hr = d2d_geometry_provider_copy(originals[i], &copies[i]);
++            if (SUCCEEDED(hr))
++                hr = ID2D1Factory_CreateGeometryGroup(geometry_provider_factory,
++                        ID2D1GeometryGroup_GetFillMode(group), copies, count, (ID2D1GeometryGroup **)result);
++            for (i = 0; i < count; ++i)
++            {
++                ID2D1Geometry_Release(originals[i]);
++                if (copies[i]) ID2D1Geometry_Release(copies[i]);
++            }
++        }
++        free(originals);
++        free(copies);
++        ID2D1GeometryGroup_Release(group);
++        return hr;
++    }
++    if (FAILED(hr = ID2D1Factory_CreatePathGeometry(geometry_provider_factory, &path)))
++        return hr;
++    if (SUCCEEDED(hr = ID2D1PathGeometry_Open(path, &sink)))
++    {
++        hr = ID2D1Geometry_Simplify(source, D2D1_GEOMETRY_SIMPLIFICATION_OPTION_CUBICS_AND_LINES,
++                NULL, D2D1_DEFAULT_FLATTENING_TOLERANCE, (ID2D1SimplifiedGeometrySink *)sink);
++        close_hr = ID2D1GeometrySink_Close(sink);
++        ID2D1GeometrySink_Release(sink);
++        if (SUCCEEDED(hr)) hr = close_hr;
++    }
++    if (FAILED(hr)) ID2D1PathGeometry_Release(path);
++    else *result = (ID2D1Geometry *)path;
++    return hr;
++}
++
++static HRESULT d2d_geometry_provider_combine(ID2D1Geometry *source, ID2D1Geometry *input,
++        D2D1_COMBINE_MODE mode, const D2D1_MATRIX_3X2_F *transform, float tolerance,
++        ID2D1SimplifiedGeometrySink *sink)
++{
++    ID2D1Geometry *source_copy, *input_copy;
++    HRESULT hr;
++
++    if (!input || !sink) return E_INVALIDARG;
++    InitOnceExecuteOnce(&geometry_provider_once, d2d_geometry_provider_init, NULL, NULL);
++    if (!geometry_provider_factory) return E_NOTIMPL;
++    if (FAILED(hr = d2d_geometry_provider_copy(source, &source_copy))) return hr;
++    if (SUCCEEDED(hr = d2d_geometry_provider_copy(input, &input_copy)))
++    {
++        hr = ID2D1Geometry_CombineWithGeometry(source_copy, input_copy, mode, transform, tolerance, sink);
++        ID2D1Geometry_Release(input_copy);
++    }
++    ID2D1Geometry_Release(source_copy);
++    return hr;
++}
+ 
+ #define D2D_FIGURE_FLAG_CLOSED          0x00000001u
+ #define D2D_FIGURE_FLAG_HOLLOW          0x00000002u
+@@ -3972,10 +4127,10 @@
+         ID2D1Geometry *geometry, D2D1_COMBINE_MODE combine_mode, const D2D1_MATRIX_3X2_F *transform,
+         float tolerance, ID2D1SimplifiedGeometrySink *sink)
+ {
+-    FIXME("iface %p, geometry %p, combine_mode %#x, transform %p, tolerance %.8e, sink %p stub!\n",
++    TRACE("iface %p, geometry %p, mode %#x, transform %p, tolerance %.8e, sink %p.\n",
+             iface, geometry, combine_mode, transform, tolerance, sink);
+ 
+-    return E_NOTIMPL;
++    return d2d_geometry_provider_combine((ID2D1Geometry *)iface, geometry, combine_mode, transform, tolerance, sink);
+ }
+ 
+ static HRESULT STDMETHODCALLTYPE d2d_path_geometry_Outline(ID2D1PathGeometry1 *iface,
+@@ -4316,10 +4471,10 @@
+         ID2D1Geometry *geometry, D2D1_COMBINE_MODE combine_mode, const D2D1_MATRIX_3X2_F *transform,
+         float tolerance, ID2D1SimplifiedGeometrySink *sink)
+ {
+-    FIXME("iface %p, geometry %p, combine_mode %#x, transform %p, tolerance %.8e, sink %p stub!\n",
++    TRACE("iface %p, geometry %p, mode %#x, transform %p, tolerance %.8e, sink %p.\n",
+             iface, geometry, combine_mode, transform, tolerance, sink);
+ 
+-    return E_NOTIMPL;
++    return d2d_geometry_provider_combine((ID2D1Geometry *)iface, geometry, combine_mode, transform, tolerance, sink);
+ }
+ 
+ static HRESULT STDMETHODCALLTYPE d2d_ellipse_geometry_Outline(ID2D1EllipseGeometry *iface,
+@@ -4726,10 +4881,10 @@
+         ID2D1Geometry *geometry, D2D1_COMBINE_MODE combine_mode, const D2D1_MATRIX_3X2_F *transform,
+         float tolerance, ID2D1SimplifiedGeometrySink *sink)
+ {
+-    FIXME("iface %p, geometry %p, combine_mode %#x, transform %p, tolerance %.8e, sink %p stub!\n",
++    TRACE("iface %p, geometry %p, mode %#x, transform %p, tolerance %.8e, sink %p.\n",
+             iface, geometry, combine_mode, transform, tolerance, sink);
+ 
+-    return E_NOTIMPL;
++    return d2d_geometry_provider_combine((ID2D1Geometry *)iface, geometry, combine_mode, transform, tolerance, sink);
+ }
+ 
+ static HRESULT STDMETHODCALLTYPE d2d_rectangle_geometry_Outline(ID2D1RectangleGeometry *iface,
+@@ -5092,10 +5247,10 @@
+         ID2D1RoundedRectangleGeometry *iface, ID2D1Geometry *geometry, D2D1_COMBINE_MODE combine_mode,
+         const D2D1_MATRIX_3X2_F *transform, float tolerance, ID2D1SimplifiedGeometrySink *sink)
+ {
+-    FIXME("iface %p, geometry %p, combine_mode %#x, transform %p, tolerance %.8e, sink %p stub!\n",
++    TRACE("iface %p, geometry %p, mode %#x, transform %p, tolerance %.8e, sink %p.\n",
+             iface, geometry, combine_mode, transform, tolerance, sink);
+ 
+-    return E_NOTIMPL;
++    return d2d_geometry_provider_combine((ID2D1Geometry *)iface, geometry, combine_mode, transform, tolerance, sink);
+ }
+ 
+ static HRESULT STDMETHODCALLTYPE d2d_rounded_rectangle_geometry_Outline(ID2D1RoundedRectangleGeometry *iface,
+@@ -5440,10 +5595,10 @@
+         ID2D1Geometry *geometry, D2D1_COMBINE_MODE combine_mode, const D2D1_MATRIX_3X2_F *transform,
+         float tolerance, ID2D1SimplifiedGeometrySink *sink)
+ {
+-    FIXME("iface %p, geometry %p, combine_mode %#x, transform %p, tolerance %.8e, sink %p stub!\n",
++    TRACE("iface %p, geometry %p, mode %#x, transform %p, tolerance %.8e, sink %p.\n",
+             iface, geometry, combine_mode, transform, tolerance, sink);
+ 
+-    return E_NOTIMPL;
++    return d2d_geometry_provider_combine((ID2D1Geometry *)iface, geometry, combine_mode, transform, tolerance, sink);
+ }
+ 
+ static HRESULT STDMETHODCALLTYPE d2d_transformed_geometry_Outline(ID2D1TransformedGeometry *iface,
+@@ -5706,10 +5861,10 @@
+         ID2D1Geometry *geometry, D2D1_COMBINE_MODE combine_mode, const D2D1_MATRIX_3X2_F *transform,
+         float tolerance, ID2D1SimplifiedGeometrySink *sink)
+ {
+-    FIXME("iface %p, geometry %p, combine_mode %#x, transform %p, tolerance %.8e, sink %p stub!\n",
++    TRACE("iface %p, geometry %p, mode %#x, transform %p, tolerance %.8e, sink %p.\n",
+             iface, geometry, combine_mode, transform, tolerance, sink);
+ 
+-    return E_NOTIMPL;
++    return d2d_geometry_provider_combine((ID2D1Geometry *)iface, geometry, combine_mode, transform, tolerance, sink);
+ }
+ 
+ static HRESULT STDMETHODCALLTYPE d2d_geometry_group_Outline(ID2D1GeometryGroup *iface,

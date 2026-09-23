@@ -1,0 +1,22 @@
+--- a/dlls/kernelbase/thread.c
++++ b/dlls/kernelbase/thread.c
+@@ -90,7 +90,7 @@
+ {
+     ULONG_PTR buffer[offsetof( PS_ATTRIBUTE_LIST, Attributes[3] ) / sizeof(ULONG_PTR)];
+     PS_ATTRIBUTE_LIST *attr_list = (PS_ATTRIBUTE_LIST *)buffer;
+-    struct _ACTIVATION_CONTEXT *actctx;
++    struct _ACTIVATION_CONTEXT *actctx = NULL;
+     HANDLE handle;
+     CLIENT_ID client_id;
+     TEB *teb;
+@@ -140,7 +140,9 @@
+     InitializeObjectAttributes( &attr, NULL, 0, NULL, sa ? sa->lpSecurityDescriptor : NULL );
+     if (sa && sa->bInheritHandle) attr.Attributes |= OBJ_INHERIT;
+ 
+-    RtlGetActiveActivationContext( &actctx );
++    /* Activation contexts and TEB addresses belong to their process. A remote
++     * thread uses its target process context, not the caller's context. */
++    if (RtlIsCurrentProcess( process )) RtlGetActiveActivationContext( &actctx );
+ 
+     if (!set_ntstatus( NtCreateThreadEx( &handle, THREAD_ALL_ACCESS, &attr, process,
+                                          (PRTL_THREAD_START_ROUTINE)start, param,
