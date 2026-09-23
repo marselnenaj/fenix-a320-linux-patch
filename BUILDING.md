@@ -47,8 +47,10 @@ source archives and validates binary hashes. It creates:
 Create a GitHub **prerelease** tagged `v0.1.0-preview.1` and attach the two
 archives plus SHA256SUMS. The tag must contain this project source and
 `bundle.json`; do not commit payload binaries or private prefixes. Use
-`docs/release-notes.md` as the release body. The same Linux ZIP can be uploaded
-to flightsim.to with `docs/flightsim-to-description.md`.
+`docs/release-notes.md` as the release body. This GitHub release is Flightdeck's
+patch download source; no separate flightsim.to listing is maintained for it.
+Make the repository public so Flightdeck can download the pinned asset without
+a GitHub login.
 
 In Flightdeck, run `python3 scripts/sync-fenix.py /path/to/this/repository`
 after building the release. This copies the reviewed MIT installer engine and
