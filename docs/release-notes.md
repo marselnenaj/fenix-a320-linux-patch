@@ -1,4 +1,31 @@
-# 0.1.0-preview.2
+# 0.1.0-preview.3 — 24 September 2026
+
+* Restore route path metrics instead of returning `E_NOTIMPL`.
+* Respect stroke joins, caps, dashes and miter limits, removing long lines at
+  acute route joins. Cache widened contours in geometry realizations.
+* Download and verify the required geometry dependency from Microsoft during
+  both fresh setup and updates; scope it to FenixDisplay.exe. No Microsoft DLL
+  is bundled in this release.
+* Keep matching X11/Xwayland helper windows off the desktop while preserving
+  their internal visibility and startup events. Keep sign-in and other programs
+  interactive; retain the portable guard for other Wine display drivers.
+* Automatically refresh stale MCDU startup images after Fenix Display restarts.
+  Restore the display preference and brightness without changing MCDU pages.
+  The helper uses the simulator’s installed SimConnect library; no additional
+  Microsoft binary is distributed.
+* Update verified preview.1/preview.2 profiles while retaining aircraft,
+  settings and the original restore point.
+
+Built from clean, pinned source archives. Installer transaction checks and the
+fresh-prefix loader, cursor, IOCP, audio and window-mapping probes pass. Graphics
+checks pass 3,564 reference and 800 concurrent metrics cases, plus 768 stroke
+comparisons with zero differing pixels.
+Route behavior was also checked in the live cockpit before this clean rebuild.
+The automatic MCDU refresh passed the live official display-restart check with
+unchanged pages, retained brightness and unchanged simulator/System/CDU process
+identities. See [mcdu-restart.md](mcdu-restart.md) for behavior and limits.
+
+## 0.1.0-preview.2
 
 * Fix invisible mouse pointers in the official Fenix Installer and livery
   manager by sharing selected Wine cursors between the WebView processes.

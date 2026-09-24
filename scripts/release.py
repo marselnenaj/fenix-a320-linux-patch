@@ -12,10 +12,13 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from fenix_patch.core import digest, verify_bundle
+from fenix_patch import __version__
 
 
 def main():
     lock = json.loads((ROOT / "bundle.json").read_text())
+    if lock["version"] != __version__:
+        raise ValueError("Installer and bundle versions differ")
     verify_bundle(ROOT)
     for group in ("sources", "patches"):
         for name, expected in lock[group].items():

@@ -42,6 +42,8 @@ class InstallerTests(unittest.TestCase):
             self.put(self.root / "tools" / name, "old script " + name)
             self.put(self.bundle / "integration" / name, "new script " + name)
         self.put(self.bundle / "integration/FenixWindowGuard.exe", "synthetic guard")
+        self.put(self.bundle / "integration/FenixMCDURefresh.exe", "synthetic refresh helper")
+        self.put(self.bundle / "integration/fenix-display-refresh.py", "synthetic refresh supervisor")
         self.lock = {"format": 1, "version": "fixture", "runner_version": "fixture version",
             "files": {name: core.digest(self.bundle / "payload" / name) for name in files},
             "runner_files": {name: core.digest(self.runner / name) for name in (*files, "files/bin/wine")},
@@ -49,7 +51,8 @@ class InstallerTests(unittest.TestCase):
             "accepted_scripts": {name: [core.digest(self.root / "tools" / name)] for name in ("launch-msfs.sh", "xodus-wine-launch")}}
         self.put(self.bundle / "bundle.json", json.dumps(self.lock))
         self.patches = [patch.object(core, "manifest", return_value=self.lock), patch.object(core, "host_check"),
-                        patch.object(core, "Wine"), patch.object(core, "prepare_framework"), patch.object(core, "graphics_and_fonts")]
+                        patch.object(core, "Wine"), patch.object(core, "prepare_framework"), patch.object(core, "graphics_and_fonts"),
+                        patch.object(core, "prepare_geometry")]
         for item in self.patches: item.start()
 
     def tearDown(self):
@@ -66,6 +69,8 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(state["state"], "installed")
         self.assertEqual((self.runner / "files/bin/wineserver").read_text(), "old files/bin/wineserver")
         self.assertEqual((self.prefix / "drive_c/windows/system32/ntdll.dll").read_text(), "new files/lib/wine/x86_64-windows/ntdll.dll")
+        self.assertEqual((self.prefix / "drive_c/windows/system32/FenixMCDURefresh.exe").read_text(), "synthetic refresh helper")
+        self.assertEqual((self.prefix / "drive_c/windows/system32/fenix-display-refresh.py").read_text(), "synthetic refresh supervisor")
         self.assertEqual(os.readlink(self.prefix / "dosdevices/c:"), "../drive_c")
         core.install(self.root, self.bundle)
         self.assertEqual(core.read_json(self.root / core.MARKER), state)
@@ -105,8 +110,10 @@ class InstallerTests(unittest.TestCase):
         old_runner = (self.root / "runner").resolve()
         self.assertTrue(core.snapshot(self.root)["update_available"])
         core.prepare_framework.reset_mock()
+        core.prepare_geometry.reset_mock()
         core.install(self.root, self.bundle)
         core.prepare_framework.assert_not_called()
+        core.prepare_geometry.assert_called_once()
         state = core.read_json(self.root / core.MARKER)
         self.assertEqual(state["version"], "fixture-next")
         self.assertTrue(state["configured"])
@@ -130,6 +137,34 @@ class InstallerTests(unittest.TestCase):
             core.install(self.root, self.bundle)
         self.assertEqual(core.read_json(self.root / core.MARKER), previous)
         self.assertTrue((self.prefix / "aircraft-installed-later").is_file())
+
+    def test_geometry_setup_failure_never_commits_the_staging_profile(self):
+        previous = self.prepare_upgrade()
+        original_runner = (self.root / "runner").resolve()
+        with patch.object(core, "prepare_geometry", side_effect=core.PatchError("bad dependency checksum")):
+            with self.assertRaisesRegex(core.PatchError, "bad dependency checksum"):
+                core.install(self.root, self.bundle)
+        self.assertEqual((self.root / "runner").resolve(), original_runner)
+        self.assertEqual((self.prefix / "aircraft-installed-later").read_text(), "keep aircraft and account state")
+        self.assertEqual(core.read_json(self.root / core.MARKER)["state"], "preparing")
+        self.assertEqual(core.read_json(self.root / core.MARKER)["previous_prefix"], previous["previous_prefix"])
+
+    def test_provider_integrity_is_checked_for_new_releases_only(self):
+        core.install(self.root, self.bundle)
+        state = core.read_json(self.root / core.MARKER)
+        self.put(self.prefix / core.GEOMETRY_PATH, "fixture geometry")
+        self.lock["prefix_files"] = {core.GEOMETRY_PATH: core.digest(self.prefix / core.GEOMETRY_PATH)}
+        core.verify_installed(self.root, state)
+        self.put(self.prefix / core.GEOMETRY_PATH, "changed geometry")
+        with self.assertRaisesRegex(core.PatchError, "dependency changed"):
+            core.verify_installed(self.root, state)
+
+    def test_scoped_geometry_environment_replaces_inherited_global_override(self):
+        with patch.dict(os.environ, {"WINE_D2D1_GEOMETRY_PROVIDER": "1", "WINESERVERSOCKET": "stale", "WINE_DLL_FILE_MAP": "stale"}):
+            env = core.wine_env(self.prefix, self.runner)
+        self.assertEqual(env["WINE_D2D1_GEOMETRY_PROVIDER"], "FenixDisplay.exe")
+        self.assertNotIn("WINESERVERSOCKET", env)
+        self.assertNotIn("WINE_DLL_FILE_MAP", env)
 
     def test_interrupted_upgrade_retains_current_profile_and_can_restore(self):
         self.prepare_upgrade()

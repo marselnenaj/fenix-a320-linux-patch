@@ -1,0 +1,87 @@
+--- a/dlls/winex11.drv/window.c
++++ b/dlls/winex11.drv/window.c
+@@ -1781,10 +1781,66 @@
+     return cached;
+ }
+ 
++/* Fenix renders cockpit textures offscreen. Its helper forms must remain
++ * logically visible to WinForms (startup/timers), without becoming desktop
++ * windows. Opt-in and restricted to the exact executable AND helper title. */
++static BOOL is_fenix_helper_window( HWND hwnd )
++{
++    static const WCHAR property[] = u"__wine_fenix_helper_window";
++    static const WCHAR system_prefix[] = u"FenixSim A320 System ";
++    const char *enabled = getenv( "WINE_FENIX_HELPER_WINDOWS" );
++    UNICODE_STRING image = NtCurrentTeb()->Peb->ProcessParameters->ImagePathName;
++    WCHAR title[256], *version;
++    const WCHAR *name = NULL;
++    unsigned int i, length;
++
++    if (!enabled || strcmp( enabled, "1" )) return FALSE;
++    if (NtUserGetProp( hwnd, property )) return TRUE;
++    if (!NtUserInternalGetWindowText( hwnd, title, ARRAY_SIZE(title) )) return FALSE;
++    if (!wcscmp( title, u"ProSimA322 Display" ) || !wcscmp( title, u"Fenix Display" ))
++        name = u"FenixDisplay.exe";
++    else if (!wcscmp( title, u"ProSimA322 MCDU" )) name = u"FenixCDU.exe";
++    else if (!wcscmp( title, u"ProSimA322 System" )) name = u"FenixSystem.exe";
++    else if (!wcsncmp( title, system_prefix, ARRAY_SIZE(system_prefix) - 1 ))
++    {
++        version = title + ARRAY_SIZE(system_prefix) - 1;
++        for (;;)
++        {
++            if (*version < '0' || *version > '9') return FALSE;
++            do { ++version; } while (*version >= '0' && *version <= '9');
++            if (!*version) break;
++            if (*version++ != '.') return FALSE;
++        }
++        name = u"FenixSystem.exe";
++    }
++    if (!name) return FALSE;
++    for (i = image.Length / sizeof(WCHAR); i && image.Buffer[i - 1] != '\\'; --i) {}
++    image.Buffer += i;
++    image.Length -= i * sizeof(WCHAR);
++    image.MaximumLength = image.Length;
++    length = wcslen( name );
++    if (image.Length != length * sizeof(WCHAR)) return FALSE;
++    for (i = 0; i < length; ++i)
++    {
++        WCHAR a = image.Buffer[i], b = name[i];
++        if (a >= 'A' && a <= 'Z') a += 'a' - 'A';
++        if (b >= 'A' && b <= 'Z') b += 'a' - 'A';
++        if (a != b) return FALSE;
++    }
++    NtUserSetProp( hwnd, property, (HANDLE)1 );
++    return TRUE;
++}
++
+ static void window_set_wm_state( struct x11drv_win_data *data, UINT new_state, BOOL activate )
+ {
+     UINT old_state = data->pending_state.wm_state;
+     HWND foreground = NtUserGetForegroundWindow();
++
++    if (is_fenix_helper_window( data->hwnd ))
++    {
++        new_state = WithdrawnState;
++        activate = FALSE;
++    }
+ 
+     data->desired_state.wm_state = new_state;
+     data->desired_state.activate = activate;
+@@ -2938,11 +2994,17 @@
+ void X11DRV_SetWindowText( HWND hwnd, LPCWSTR text )
+ {
+     Window win;
++    struct x11drv_win_data *data;
+ 
+     if ((win = X11DRV_get_whole_window( hwnd )) && win != DefaultRootWindow(gdi_display))
+     {
+         Display *display = thread_init_display();
+         sync_window_text( display, win, text );
++        if (is_fenix_helper_window( hwnd ) && (data = get_win_data( hwnd )))
++        {
++            window_set_wm_state( data, WithdrawnState, FALSE );
++            release_win_data( data );
++        }
+         XFlush( display );
+     }
+ }

@@ -18,9 +18,12 @@ if json.load(open(sys.argv[1])).get('state') != 'installed':
 FENIX
     export WINE_TRACK_WRITECOPY='apps:Fenix.exe,FenixSystem.exe,FenixDisplay.exe,FenixCDU.exe,FlightSimulator2024.exe'
     export WINE_D2D1_DISPLAY_EFFECTS='FenixDisplay.exe;FenixCDU.exe'
+    export WINE_D2D1_GEOMETRY_PROVIDER='FenixDisplay.exe'
     export WINE_DWRITE_UNHINTED_OUTLINES='FenixDisplay.exe;FenixCDU.exe'
     export DOTNET_SYSTEM_GLOBALIZATION_USENLS=1 DOTNET_ReadyToRun=0
     export WINE_FENIX_WINDOW_GUARD=1
+    export WINE_FENIX_HELPER_WINDOWS=1
+    export WINE_FENIX_DISPLAY_REFRESH=1
 fi
 export XODUS_WINE_RUNNER="$MSFS_LINUX_ROOT/runner/files/bin/wine"
 export MEDIACONV_BLANK_VIDEO_FILE="$MSFS_LINUX_ROOT/runner/files/share/media/blank.mkv"

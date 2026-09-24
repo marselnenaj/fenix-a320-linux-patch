@@ -1,11 +1,19 @@
-# Optional early helper placement
+# Helper windows
 
-The portable window guard starts with the simulator and hides only matching
-Fenix helper processes. For Hyprland, early window rules can prevent a brief
-flash while each helper first appears. Add the equivalent rules through your
-distribution's normal user configuration; the installer does not edit it.
+The opt-in X11/Xwayland driver patch prevents mapping the three Fenix helper
+forms to the desktop. It matches both the executable basename and observed
+helper title, including renamed Display and versioned System windows. Win32
+visibility remains intact so WinForms startup, paints and timers can continue.
+The portable guard recognizes driver-handled windows and leaves them alone.
+Other executable/title combinations, Fenix sign-in, the installer and the
+simulator use normal window handling.
 
-For Omarchy's Lua configuration (`o` is the existing Omarchy helper):
+The installer enables this behavior only in the Fenix runtime. No desktop
+configuration is changed. The native Wayland driver still uses the portable
+hide guard and needs separate live testing.
+
+Optional early placement for older patches on Omarchy's Lua configuration
+(`o` is the existing Omarchy helper):
 
 ```lua
 o.window({class="^steam_proton$", initial_title="^ProSimA322 (System|Display|MCDU)$"}, {
@@ -14,10 +22,6 @@ o.window({class="^steam_proton$", initial_title="^ProSimA322 (System|Display|MCD
 })
 ```
 
-Match the **initial title** as well as the class. `steam_proton` alone also
-matches the simulator and unrelated applications. If you use a separate window
-placement/history service, exclude those helper titles from generic Steam rules.
-Do not copy somebody else's monitor coordinates or saved window geometry.
-
-This example is for the Lua configuration used during local verification;
-Hyprland configurations using another syntax need the equivalent native rules.
+Match the initial title as well as the class. `steam_proton` alone also matches
+the simulator and unrelated applications. Other Hyprland configuration syntaxes
+need equivalent native rules. Do not copy monitor coordinates or saved geometry.

@@ -9,7 +9,8 @@ MSFS 2020 werden vor Änderungen abgewiesen.
 2. Das Linux-Installer-ZIP aus den GitHub-Releases entpacken und `./install.sh`
    starten. Alternativ Flightdeck → Add-ons → Fenix A320 öffnen.
 3. Patch einrichten. Der Installer sichert das Windows-Profil, erstellt eine
-   eigene Runner-Kopie und installiert bei Bedarf Microsoft .NET Framework 4.8.
+   eigene Runner-Kopie und installiert bei Bedarf Microsoft .NET Framework 4.8
+   sowie die geprüfte Geometrie-Abhängigkeit für die Routenanzeige.
 4. Den offiziellen Fenix-Installer aus dem eigenen Fenix-Konto auswählen und
    die normale Installation einschließlich der angebotenen Voraussetzungen abschließen.
 5. Fenix öffnen, anmelden und aktivieren. Anschließend Fenix samt Helfern schließen.
@@ -31,3 +32,14 @@ Bei einer unterbrochenen Einrichtung bleibt diese Funktion ebenfalls verfügbar.
 Das Downloadpaket enthält keine Fenix-/Microsoft-Programme, Flugzeuge, Fonts,
 Kontodaten oder privaten Profile. Es enthält den Installer, die Wine-Patches,
 Wine-Binärmodule sowie deren vollständige Quellarchive und Bauanleitung.
+
+Preview.3 ergänzt die Korrekturen für fehlende Routen und überlange Linien.
+Unter X11/Xwayland werden die passenden Fenix-Hilfsfenster direkt im Wine-Treiber
+vom Desktop ferngehalten. Updates von preview.1 und preview.2 behalten Flugzeug,
+Einstellungen und den ursprünglichen Wiederherstellungspunkt.
+
+Nach einem Neustart von Fenix Display frischt ein Helfer festgehaltene dunkle
+MCDU-Bilder automatisch auf. Er stellt die Anzeigeeinstellung und Helligkeit
+wieder her und sendet keine Seiten- oder Flugplaneingaben. Bei maximaler
+Helligkeit ist dafür ein kurzer DIM/BRT-Wechsel nötig.
+[Verhalten und Grenzen](mcdu-restart.md).

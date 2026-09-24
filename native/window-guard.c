@@ -10,6 +10,24 @@
 #include <windows.h>
 #include <wchar.h>
 
+static BOOL system_title(const WCHAR *title)
+{
+    static const WCHAR prefix[] = L"FenixSim A320 System ";
+    const WCHAR *version;
+    if (!wcscmp(title, L"ProSimA322 System")) return TRUE;
+    if (wcsncmp(title, prefix, (sizeof(prefix) / sizeof(*prefix)) - 1)) return FALSE;
+    version = title + (sizeof(prefix) / sizeof(*prefix)) - 1;
+    /* The running helper replaces its initial title with a versioned title.
+     * Accept numeric version components only, never account/setup dialogs. */
+    for (;;)
+    {
+        if (*version < L'0' || *version > L'9') return FALSE;
+        do { ++version; } while (*version >= L'0' && *version <= L'9');
+        if (!*version) return TRUE;
+        if (*version++ != L'.') return FALSE;
+    }
+}
+
 static BOOL CALLBACK hide_helper(HWND window, LPARAM unused)
 {
     WCHAR title[256], image[1024], *name;
@@ -18,8 +36,8 @@ static BOOL CALLBACK hide_helper(HWND window, LPARAM unused)
     const WCHAR *expected;
     (void)unused;
     if (!GetWindowTextW(window, title, 256)) return TRUE;
-    if (!wcscmp(title, L"ProSimA322 System")) expected = L"FenixSystem.exe";
-    else if (!wcscmp(title, L"ProSimA322 Display")) expected = L"FenixDisplay.exe";
+    if (system_title(title)) expected = L"FenixSystem.exe";
+    else if (!wcscmp(title, L"ProSimA322 Display") || !wcscmp(title, L"Fenix Display")) expected = L"FenixDisplay.exe";
     else if (!wcscmp(title, L"ProSimA322 MCDU")) expected = L"FenixCDU.exe";
     else return TRUE;
     GetWindowThreadProcessId(window, &pid);
@@ -32,7 +50,9 @@ static BOOL CALLBACK hide_helper(HWND window, LPARAM unused)
         {
             SetWindowLongPtrW(window, GWL_EXSTYLE,
                 GetWindowLongPtrW(window, GWL_EXSTYLE) | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW);
-            if (IsWindowVisible(window)) ShowWindow(window, SW_HIDE);
+            /* Preserve WinForms visibility when the X11 driver owns hiding. */
+            if (!GetPropW(window, L"__wine_fenix_helper_window") && IsWindowVisible(window))
+                ShowWindow(window, SW_HIDE);
         }
     }
     CloseHandle(process);

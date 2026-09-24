@@ -11,17 +11,18 @@ The shipped ELF modules require glibc 2.38 or newer. An older-distribution build
 must be tested and published as a separately pinned artifact.
 
 ```sh
-python3 scripts/build.py --record-build
+python3 scripts/build.py --build-dir build/release --record-build
 python3 -m unittest discover -s tests -p 'test_*.py' -v
+python3 scripts/smoke.py --runner /path/to/pinned-runner --work build/release-smoke
 python3 scripts/release.py
 ```
 
-Start with no `build/` directory. `--prepare-only` verifies and applies all patches
+Use a fresh `--build-dir`; existing build trees are never overwritten. `--prepare-only` verifies and applies all patches
 without compiling. The build verifies both source archives, populates the
 xgameruntime submodule, generates spec/Vulkan headers from the included XML,
 and configures Wine with `--enable-win64 --disable-tests --enable-silent-rules
---without-ffmpeg`. It builds the ten targets listed in `scripts/build.py` and
-the independent MIT window guard. Debug sections are stripped from release files.
+--without-ffmpeg`. It builds the eleven targets listed in `scripts/build.py` and
+the independent MIT window guard, geometry setup and MCDU refresh helpers. Debug sections are stripped from release files.
 Compiler prefix maps replace local checkout paths in both Unix and Windows
 modules with `/usr/src/fenix-a320-linux-patch`.
 
@@ -37,6 +38,12 @@ then rebuild. The installer validates its own manifest, so modified binaries
 can be installed by updating that manifest and building your own release.
 Do not overwrite binaries in an active Wine session.
 
+The smoke checks use an isolated runner and prefix, require X11/Xwayland (or
+Xvfb), and download pinned Microsoft geometry dependencies. They compare route
+metrics and rasterized stroke contours with an independent geometry reference,
+check actual X11 mapping as well as Win32 visibility, and run the existing
+loader, cursor, write-copy, IOCP and audio regressions.
+
 ## Release files
 
 `scripts/release.py` exports only allowlisted project files. It requires all
@@ -47,7 +54,7 @@ source archives and validates binary hashes. It creates:
 * `SHA256SUMS`: checksums for both downloads.
 * `flightdeck-release.json`: the pinned URL/hash used by Flightdeck.
 
-Create a GitHub **prerelease** tagged `v0.1.0-preview.2` and attach the two
+Create a GitHub **prerelease** tagged `v0.1.0-preview.3` and attach the two
 archives plus SHA256SUMS. The tag must contain this project source and
 `bundle.json`; do not commit payload binaries or private prefixes. Use
 `docs/release-notes.md` as the release body. This GitHub release is Flightdeck's

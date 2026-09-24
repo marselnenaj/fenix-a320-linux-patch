@@ -19,6 +19,7 @@ TARGETS = {
     **{f"dlls/{n}/x86_64-windows/{n}.dll": f"files/lib/wine/x86_64-windows/{n}.dll" for n in ("crypt32", "mmdevapi", "kernelbase", "d2d1", "dwrite")},
     "dlls/dwrite/dwrite.so": "files/lib/wine/x86_64-unix/dwrite.so",
     "dlls/win32u/win32u.so": "files/lib/wine/x86_64-unix/win32u.so",
+    "dlls/winex11.drv/winex11.so": "files/lib/wine/x86_64-unix/winex11.so",
 }
 
 
@@ -52,6 +53,7 @@ def extract(archive, target):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--prepare-only", action="store_true")
+    parser.add_argument("--build-dir", type=Path, default=ROOT / "build", help="Fresh source/object directory")
     parser.add_argument("--record-build", action="store_true", help="Update payload hashes after rebuilding; review and repin consumers before publishing")
     parser.add_argument("--jobs", type=int, default=min(os.cpu_count() or 2, 8))
     args = parser.parse_args()
@@ -64,7 +66,7 @@ def main():
         if not path.exists():
             with urllib.request.urlopen(urls[name], timeout=60) as response, path.open("xb") as output: shutil.copyfileobj(response, output)
         if sha(path) != expected: raise ValueError("Source checksum mismatch: " + name)
-    build = ROOT / "build"; build.mkdir(exist_ok=True)
+    build = args.build_dir.resolve(); build.mkdir(parents=True, exist_ok=True)
     source = build / "wine"
     if source.exists(): raise ValueError("Use an empty build directory; existing work is never overwritten")
     extract(sources / "wine-source.tar.gz", source)
@@ -76,14 +78,16 @@ def main():
         if sha(path) != expected: raise ValueError("Patch checksum mismatch: " + name)
         subprocess.run(["patch", "--batch", "--fuzz=0", "-p1", "-i", str(path)], cwd=source, check=True)
     if args.prepare_only: return
-    run = lambda command, cwd=source: subprocess.run(command, cwd=cwd, check=True)
+    env = dict(os.environ, XDG_CACHE_HOME=str(build / "cache"))
+    run = lambda command, cwd=source: subprocess.run(command, cwd=cwd, env=env, check=True)
     # The protocol 931 generated header/trace are supplied by the patch. Do not
     # let make_requests increment the ABI used by the pinned 32-bit clients.
     run(["./tools/make_specfiles"])
     run(["python3", "dlls/winevulkan/make_vulkan", "--xml", str(source / "dlls/winevulkan/vk.xml"), "--video-xml", str(source / "dlls/winevulkan/video.xml")])
     run(["autoreconf", "-f"])
     output = build / "objects"; output.mkdir()
-    flags = "-g -O2 -ffile-prefix-map=" + str(ROOT) + "=/usr/src/fenix-a320-linux-patch"
+    flags = ("-g -O2 -ffile-prefix-map=" + str(ROOT) + "=/usr/src/fenix-a320-linux-patch"
+             " -ffile-prefix-map=" + str(build) + "=/usr/src/fenix-a320-linux-patch/build")
     run([str(source / "configure"), "--enable-win64", "--disable-tests", "--enable-silent-rules", "--without-ffmpeg",
          "CFLAGS=" + flags, "CROSSCFLAGS=" + flags], output)
     run(["make", "depend"], output)
@@ -94,10 +98,17 @@ def main():
         run(["x86_64-w64-mingw32-strip" if file.suffix == ".dll" else "strip", "--strip-debug", str(file)])
     run(["x86_64-w64-mingw32-gcc", "-Os", "-s", "-municode", "-mwindows", "-Wl,--no-insert-timestamp",
          "-o", str(ROOT / "integration/FenixWindowGuard.exe"), str(ROOT / "native/window-guard.c"), "-luser32"])
+    run(["x86_64-w64-mingw32-gcc", "-Os", "-s", "-municode", "-Wl,--no-insert-timestamp",
+         "-o", str(ROOT / "integration/FenixGeometrySetup.exe"), str(ROOT / "native/geometry-setup.c"), "-lsetupapi"])
+    run(["x86_64-w64-mingw32-gcc", "-Os", "-s", "-municode", "-Wl,--no-insert-timestamp",
+         "-o", str(ROOT / "integration/FenixMCDURefresh.exe"), str(ROOT / "native/mcdu-refresh.c")])
     current = {name: sha(ROOT / "payload" / name) for name in lock["files"]}
     integration = {name: sha(ROOT / "integration" / name) for name in lock["integration"]}
     if args.record_build:
         lock.update(files=current, integration=integration)
+        lock.setdefault("prefix_files", {})["drive_c/windows/system32/FenixWindowGuard.exe"] = integration["FenixWindowGuard.exe"]
+        for name in ("FenixMCDURefresh.exe", "fenix-display-refresh.py"):
+            lock["prefix_files"]["drive_c/windows/system32/" + name] = integration[name]
         (ROOT / "bundle.json").write_text(json.dumps(lock, indent=2) + "\n")
     elif current != lock["files"] or integration != lock["integration"]:
         raise ValueError("Build finished with different hashes. Compiler/platform/timestamps can differ; review before --record-build and repin Flightdeck.")

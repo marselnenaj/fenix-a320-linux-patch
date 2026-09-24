@@ -1,0 +1,153 @@
+--- a/dlls/d2d1/geometry.c
++++ b/dlls/d2d1/geometry.c
+@@ -204,6 +204,65 @@
+     if (FAILED(hr = d2d_geometry_provider_copy(source, &copy))) return hr;
+     hr = ID2D1Geometry_ComputePointAtLength(copy, length, transform, tolerance, point, tangent);
+     ID2D1Geometry_Release(copy);
++    return hr;
++}
++
++/* Wine's outline shader does not implement stroke joins, caps or dashes. Use
++ * the opt-in geometry provider to construct their actual filled contour,
++ * preserving the caller's style (including native zero-miter-limit handling).
++ * Only geometry computation crosses the provider boundary; rendering and the
++ * returned path remain in this Wine factory. */
++HRESULT d2d_geometry_provider_stroke_outline(ID2D1Geometry *source, float width,
++        ID2D1StrokeStyle *style, float tolerance, ID2D1PathGeometry **result)
++{
++    D2D1_STROKE_STYLE_PROPERTIES properties;
++    ID2D1StrokeStyle *native_style = NULL;
++    ID2D1Geometry *copy = NULL;
++    ID2D1Factory *factory = NULL;
++    ID2D1PathGeometry *path = NULL;
++    ID2D1GeometrySink *sink = NULL;
++    float *dashes = NULL;
++    UINT32 count = 0;
++    HRESULT hr, close_hr;
++
++    *result = NULL;
++    InitOnceExecuteOnce(&geometry_provider_once, d2d_geometry_provider_init, NULL, NULL);
++    if (!geometry_provider_factory) return E_NOTIMPL;
++    if (FAILED(hr = d2d_geometry_provider_copy(source, &copy))) return hr;
++
++    if (style)
++    {
++        properties.startCap = ID2D1StrokeStyle_GetStartCap(style);
++        properties.endCap = ID2D1StrokeStyle_GetEndCap(style);
++        properties.dashCap = ID2D1StrokeStyle_GetDashCap(style);
++        properties.lineJoin = ID2D1StrokeStyle_GetLineJoin(style);
++        properties.miterLimit = ID2D1StrokeStyle_GetMiterLimit(style);
++        properties.dashStyle = ID2D1StrokeStyle_GetDashStyle(style);
++        properties.dashOffset = ID2D1StrokeStyle_GetDashOffset(style);
++        if (properties.dashStyle == D2D1_DASH_STYLE_CUSTOM && (count = ID2D1StrokeStyle_GetDashesCount(style)))
++        {
++            if (!(dashes = calloc(count, sizeof(*dashes))))
++            { hr = E_OUTOFMEMORY; goto done; }
++            ID2D1StrokeStyle_GetDashes(style, dashes, count);
++        }
++        if (FAILED(hr = ID2D1Factory_CreateStrokeStyle(geometry_provider_factory,
++                &properties, dashes, count, &native_style))) goto done;
++    }
++    ID2D1Geometry_GetFactory(source, &factory);
++    if (FAILED(hr = ID2D1Factory_CreatePathGeometry(factory, &path))) goto done;
++    if (FAILED(hr = ID2D1PathGeometry_Open(path, &sink))) goto done;
++    hr = ID2D1Geometry_Widen(copy, width, native_style, NULL, tolerance,
++            (ID2D1SimplifiedGeometrySink *)sink);
++    close_hr = ID2D1GeometrySink_Close(sink);
++    if (SUCCEEDED(hr)) hr = close_hr;
++    if (SUCCEEDED(hr)) { *result = path; path = NULL; }
++done:
++    if (sink) ID2D1GeometrySink_Release(sink);
++    if (path) ID2D1PathGeometry_Release(path);
++    if (factory) ID2D1Factory_Release(factory);
++    if (native_style) ID2D1StrokeStyle_Release(native_style);
++    ID2D1Geometry_Release(copy);
++    free(dashes);
+     return hr;
+ }
+ 
+--- a/dlls/d2d1/d2d1_private.h
++++ b/dlls/d2d1/d2d1_private.h
+@@ -629,6 +629,8 @@
+ HRESULT d2d_geometry_group_init(struct d2d_geometry *geometry, ID2D1Factory *factory,
+         D2D1_FILL_MODE fill_mode, ID2D1Geometry **src_geometries, unsigned int geometry_count);
+ struct d2d_geometry *unsafe_impl_from_ID2D1Geometry(ID2D1Geometry *iface);
++HRESULT d2d_geometry_provider_stroke_outline(ID2D1Geometry *source, float width,
++        ID2D1StrokeStyle *style, float tolerance, ID2D1PathGeometry **result);
+ 
+ struct d2d_geometry_realization
+ {
+--- a/dlls/d2d1/device.c
++++ b/dlls/d2d1/device.c
+@@ -983,6 +983,7 @@
+     struct d2d_device_context *context = impl_from_ID2D1DeviceContext(iface);
+     struct d2d_brush *brush_impl = unsafe_impl_from_ID2D1Brush(brush);
+     struct d2d_stroke_style *stroke_style_impl = unsafe_impl_from_ID2D1StrokeStyle(stroke_style);
++    ID2D1PathGeometry *outline;
+ 
+     TRACE("iface %p, geometry %p, brush %p, stroke_width %.8e, stroke_style %p.\n",
+             iface, geometry, brush, stroke_width, stroke_style);
+@@ -1003,14 +1004,22 @@
+         return;
+     }
+ 
++    if (stroke_style_impl)
++    {
++        if (stroke_style_impl->desc.transformType == D2D1_STROKE_TRANSFORM_TYPE_FIXED)
++            stroke_width /= context->drawing_state.transform.m11;
++    }
++
++    if (stroke_style_impl && stroke_style_impl->desc.transformType == D2D1_STROKE_TRANSFORM_TYPE_NORMAL
++            && SUCCEEDED(d2d_geometry_provider_stroke_outline(geometry, stroke_width,
++            stroke_style, D2D1_DEFAULT_FLATTENING_TOLERANCE, &outline)))
++    {
++        ID2D1DeviceContext6_FillGeometry(iface, (ID2D1Geometry *)outline, brush, NULL);
++        ID2D1PathGeometry_Release(outline);
++        return;
++    }
+     if (stroke_style)
+         FIXME("Ignoring stroke style %p.\n", stroke_style);
+-
+-    if (stroke_style_impl)
+-    {
+-        if (stroke_style_impl->desc.transformType == D2D1_STROKE_TRANSFORM_TYPE_FIXED)
+-            stroke_width /= context->drawing_state.transform.m11;
+-    }
+ 
+     d2d_device_context_draw_geometry(context, geometry_impl, brush_impl, stroke_width);
+ }
+@@ -2831,6 +2840,8 @@
+ {
+     struct d2d_device_context *context = impl_from_ID2D1DeviceContext(iface);
+     struct d2d_geometry_realization *object;
++    struct d2d_stroke_style *style = unsafe_impl_from_ID2D1StrokeStyle(stroke_style);
++    ID2D1PathGeometry *outline = NULL;
+     HRESULT hr;
+ 
+     TRACE("iface %p, geometry %p, tolerance %.8e, stroke_width %.8e, stroke_style %p, realization %p.\n",
+@@ -2839,14 +2850,22 @@
+     if (!(object = calloc(1, sizeof(*object))))
+         return E_OUTOFMEMORY;
+ 
+-    if (FAILED(hr = d2d_geometry_realization_init(object, context->factory, geometry)))
++    /* Realizations retain this contour, so route joins are widened once when
++     * the route changes rather than recomputed for every rendered frame. */
++    if (style && style->desc.transformType == D2D1_STROKE_TRANSFORM_TYPE_NORMAL)
++        d2d_geometry_provider_stroke_outline(geometry, stroke_width, stroke_style, tolerance, &outline);
++    hr = d2d_geometry_realization_init(object, context->factory,
++            outline ? (ID2D1Geometry *)outline : geometry);
++    if (outline) ID2D1PathGeometry_Release(outline);
++    if (FAILED(hr))
+     {
+         WARN("Failed to initialise geometry realization, hr %#lx.\n", hr);
+         free(object);
+         return hr;
+     }
+-    object->stroke_width = stroke_width;
+-    object->stroke_style = stroke_style;
++    object->filled = !!outline;
++    object->stroke_width = outline ? 0.0f : stroke_width;
++    object->stroke_style = outline ? NULL : stroke_style;
+     if (object->stroke_style)
+         ID2D1StrokeStyle_AddRef(object->stroke_style);
+ 
