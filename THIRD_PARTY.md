@@ -8,6 +8,9 @@
   `sources/xgameruntime-source.tar.gz`, with original notices.
 * All modifications to these sources are in `patches/`, in manifest order.
   The patches are LGPL-2.1-or-later. See `licenses/LGPL-2.1.txt`.
+* The selected-cursor sharing fix is backported from GloriousEggroll's
+  [GE-Proton patch](https://github.com/GloriousEggroll/proton-ge-custom/commit/16a62e92).
+  Its authorship and Wine's per-file notices are retained.
 * The installer, integration wrapper and window guard are MIT. The integration
   scripts originate from the MIT-licensed Flightdeck launcher, with its notices retained.
 

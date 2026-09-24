@@ -54,6 +54,9 @@ Microsoft .NET Framework 4.8 when needed, copies the existing runner's fonts and
 graphics dependencies, and then installs the compatibility overlay after the staging Wine session exits. It retains the
 original runner, profile and launch scripts. An interrupted installation has a
 recovery journal. Repeating an already completed installation verifies its files.
+Running `install` from preview.2 also updates a verified preview.1 installation,
+retaining installed aircraft, settings and the original restore point. Flightdeck
+performs that update before opening Fenix applications when needed.
 
 `restore` restores the profile from before the patch and retains the newer
 profile in a separate local directory. Settings or add-ons installed since the
@@ -75,7 +78,7 @@ The portable guard needs testing on additional desktop environments.
 
 ## What is distributed
 
-The release contains our installer/window guard, Wine patches, nine Wine
+The release contains our installer/window guard, Wine patches, ten Wine
 replacement binaries and their complete source archives/build instructions.
 **No Fenix or Microsoft binaries, aircraft, fonts, activation data, saved
 profiles or private logs are included.** Microsoft redistributables are fetched

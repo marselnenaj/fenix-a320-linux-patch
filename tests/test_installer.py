@@ -85,6 +85,69 @@ class InstallerTests(unittest.TestCase):
         self.put(self.bundle / "payload/files/bin/wineserver", "tampered")
         with self.assertRaises(core.PatchError): core.verify_bundle(self.bundle)
 
+    def prepare_upgrade(self):
+        core.install(self.root, self.bundle)
+        state = core.read_json(self.root / core.MARKER)
+        state["configured"] = True
+        core.write_json(self.root / core.MARKER, state)
+        self.put(self.prefix / "aircraft-installed-later", "keep aircraft and account state")
+        self.lock["previous_releases"] = {self.lock["version"]: {
+            "files": dict(self.lock["files"]), "integration": dict(self.lock["integration"])}}
+        self.lock["version"] = "fixture-next"
+        for name in (*self.lock["files"], "files/lib/wine/x86_64-unix/win32u.so"):
+            self.put(self.bundle / "payload" / name, "updated " + name)
+            self.lock["files"][name] = core.digest(self.bundle / "payload" / name)
+        self.put(self.bundle / "bundle.json", json.dumps(self.lock))
+        return state
+
+    def test_upgrade_keeps_aircraft_settings_and_original_restore_point(self):
+        previous = self.prepare_upgrade()
+        old_runner = (self.root / "runner").resolve()
+        self.assertTrue(core.snapshot(self.root)["update_available"])
+        core.prepare_framework.reset_mock()
+        core.install(self.root, self.bundle)
+        core.prepare_framework.assert_not_called()
+        state = core.read_json(self.root / core.MARKER)
+        self.assertEqual(state["version"], "fixture-next")
+        self.assertTrue(state["configured"])
+        for key in ("backup", "previous_prefix", "previous_runner", "original_prefix_id"):
+            self.assertEqual(state[key], previous[key])
+        self.assertNotEqual((self.root / "runner").resolve(), old_runner)
+        self.assertEqual((old_runner / "files/bin/wineserver").read_text(), "new files/bin/wineserver")
+        self.assertEqual((self.prefix / "aircraft-installed-later").read_text(), "keep aircraft and account state")
+        self.assertFalse(core.snapshot(self.root)["update_available"])
+        core.verify_installed(self.root, state)
+        core.restore(self.root)
+        self.assertEqual((self.root / "runner").resolve(), self.runner)
+        self.assertEqual((self.prefix / "system.reg").read_text(), "original registry")
+        retained = list((self.root / "local").glob("msfs-prefix.fenix-retained-*"))
+        self.assertTrue((retained[0] / "aircraft-installed-later").is_file())
+
+    def test_upgrade_rejects_changed_previous_files_without_changing_state(self):
+        previous = self.prepare_upgrade()
+        self.put((self.root / "runner").resolve() / "files/bin/wineserver", "custom binary")
+        with self.assertRaisesRegex(core.PatchError, "Installed patch file changed"):
+            core.install(self.root, self.bundle)
+        self.assertEqual(core.read_json(self.root / core.MARKER), previous)
+        self.assertTrue((self.prefix / "aircraft-installed-later").is_file())
+
+    def test_interrupted_upgrade_retains_current_profile_and_can_restore(self):
+        self.prepare_upgrade()
+        rename = os.rename
+        def fail_commit(source, target):
+            if Path(source).name == "prefix" and Path(target) == self.prefix:
+                raise OSError("interrupted upgrade commit")
+            return rename(source, target)
+        with patch.object(core.os, "rename", side_effect=fail_commit):
+            with self.assertRaisesRegex(OSError, "interrupted upgrade"):
+                core.install(self.root, self.bundle)
+        state = core.read_json(self.root / core.MARKER)
+        self.assertEqual(state["state"], "committing")
+        self.assertTrue((self.root / state["upgrade_previous_prefix"] / "aircraft-installed-later").is_file())
+        core.restore(self.root)
+        self.assertEqual((self.prefix / "system.reg").read_text(), "original registry")
+        self.assertTrue((self.root / state["upgrade_previous_prefix"] / "aircraft-installed-later").is_file())
+
     def test_custom_scripts_are_not_overwritten(self):
         self.put(self.root / "tools/launch-msfs.sh", "user custom")
         with self.assertRaises(core.PatchError): core.install(self.root, self.bundle)

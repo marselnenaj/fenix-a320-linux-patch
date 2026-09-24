@@ -20,10 +20,13 @@ Start with no `build/` directory. `--prepare-only` verifies and applies all patc
 without compiling. The build verifies both source archives, populates the
 xgameruntime submodule, generates spec/Vulkan headers from the included XML,
 and configures Wine with `--enable-win64 --disable-tests --enable-silent-rules
---without-ffmpeg`. It builds the nine targets listed in `scripts/build.py` and
+--without-ffmpeg`. It builds the ten targets listed in `scripts/build.py` and
 the independent MIT window guard. Debug sections are stripped from release files.
+Compiler prefix maps replace local checkout paths in both Unix and Windows
+modules with `/usr/src/fenix-a320-linux-patch`.
 
-The mapped-image patch includes generated protocol 931 headers/trace; do not
+The mapped-image and protocol-handler patches include matching generated
+protocol 931 headers, trace and handlers; do not
 regenerate them with a bumped protocol. Existing 32-bit runner clients must
 remain compatible. Rebuild hashes can differ with compiler/platform/timestamps;
 `--record-build` explicitly records a new binary set for review. Rebuild and
@@ -44,7 +47,7 @@ source archives and validates binary hashes. It creates:
 * `SHA256SUMS`: checksums for both downloads.
 * `flightdeck-release.json`: the pinned URL/hash used by Flightdeck.
 
-Create a GitHub **prerelease** tagged `v0.1.0-preview.1` and attach the two
+Create a GitHub **prerelease** tagged `v0.1.0-preview.2` and attach the two
 archives plus SHA256SUMS. The tag must contain this project source and
 `bundle.json`; do not commit payload binaries or private prefixes. Use
 `docs/release-notes.md` as the release body. This GitHub release is Flightdeck's

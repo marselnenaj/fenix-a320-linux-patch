@@ -417,16 +417,24 @@ def install(runtime, bundle, progress=lambda _: None):
     lock = manifest()
     with locked(runtime) as root:
         marker = root / MARKER
+        upgrade = None
         if marker.exists():
             state = read_json(marker)
             if state.get("state") == "installed" and state.get("version") == lock["version"]:
                 verify_installed(root, state)
                 progress("This patch version is already installed.")
                 return
-            raise PatchError("A previous patch transaction exists. Restore it before reinstalling.")
+            if state.get("state") == "installed" and state.get("version") in lock.get("previous_releases", {}):
+                verify_installed(root, state)
+                upgrade = state
+            else:
+                raise PatchError("A previous patch transaction exists. Restore it before reinstalling.")
         original_runner = (root / "runner").resolve(strict=True)
-        verify_runner(original_runner, lock)
+        if upgrade is None:
+            verify_runner(original_runner, lock)
         for name, accepted in lock["accepted_scripts"].items():
+            if upgrade is not None:
+                accepted = [*accepted, lock["previous_releases"][upgrade["version"]]["integration"][name]]
             if digest(regular(root / "tools" / name)) not in accepted:
                 raise PatchError("Custom Flightdeck launch script detected; it will not be overwritten: " + name)
         prefix = root / "local/msfs-prefix"
@@ -443,6 +451,15 @@ def install(runtime, bundle, progress=lambda _: None):
                  "backup": str(backup.relative_to(root)), "previous_runner": os.readlink(root / "runner"),
                  "previous_prefix": "local/msfs-prefix.before-fenix-" + stamp, "configured": False,
                  "original_prefix_id": [prefix.stat().st_dev, prefix.stat().st_ino]}
+        if upgrade is not None:
+            # Keep the original pre-patch restore point. The profile being
+            # updated is retained separately, including later aircraft/account
+            # data. Never bootstrap .NET again in an already patched profile.
+            write_json(backup / "previous-patch.json", upgrade)
+            state.update({key: upgrade[key] for key in
+                          ("backup", "previous_runner", "previous_prefix", "original_prefix_id", "configured")})
+            state["upgrade_backup"] = str(backup.relative_to(root))
+            state["upgrade_previous_prefix"] = "local/msfs-prefix.before-fenix-update-" + stamp
         for name in ("launch-msfs.sh", "xodus-wine-launch"):
             shutil.copy2(root / "tools" / name, backup / name)
         if (root / "private/import-manifest.json").is_file():
@@ -452,7 +469,8 @@ def install(runtime, bundle, progress=lambda _: None):
         runner = work / "runner"
         wine = None
         try:
-            progress("Copying Wine profile and runner; the original profile remains available …")
+            progress("Updating the Fenix patch; installed aircraft and settings are retained …" if upgrade else
+                     "Copying Wine profile and runner; the original profile remains available …")
             copy_tree(prefix, staged)
             # A copied prefix may contain an absolute C: symlink. Never let
             # the staging installer write through it into the original.
@@ -461,17 +479,18 @@ def install(runtime, bundle, progress=lambda _: None):
                 drive.unlink()
             drive.symlink_to("../drive_c")
             copy_tree(original_runner, runner)
-            logpath = backup / "setup.log"
-            with logpath.open("xb") as log:
-                logpath.chmod(0o600)
-                wine = Wine(staged, runner, log)
-                try:
-                    prepare_framework(wine, root / "private/fenix-downloads", progress)
-                    progress("Preparing fonts, graphics dependencies and Fenix settings …")
-                    graphics_and_fonts(staged, runner, wine)
-                    state["configured"] = configure_prefix(staged)
-                finally:
-                    wine.stop()
+            if upgrade is None:
+                logpath = backup / "setup.log"
+                with logpath.open("xb") as log:
+                    logpath.chmod(0o600)
+                    wine = Wine(staged, runner, log)
+                    try:
+                        prepare_framework(wine, root / "private/fenix-downloads", progress)
+                        progress("Preparing fonts, graphics dependencies and Fenix settings …")
+                        graphics_and_fonts(staged, runner, wine)
+                        state["configured"] = configure_prefix(staged)
+                    finally:
+                        wine.stop()
             # Bootstrap native Framework with the unchanged runner first.
             # Publish the overlay only after every staging Wine process exited.
             for name in lock["files"]:
@@ -484,7 +503,7 @@ def install(runtime, bundle, progress=lambda _: None):
             ensure_idle(prefix)
             state["state"] = "committing"
             write_json(marker, state)
-            os.rename(prefix, root / state["previous_prefix"])
+            os.rename(prefix, root / state.get("upgrade_previous_prefix", state["previous_prefix"]))
             os.rename(staged, prefix)
             replace_link(root / "runner", runner)
             for name in ("launch-msfs.sh", "xodus-wine-launch"):
@@ -497,7 +516,8 @@ def install(runtime, bundle, progress=lambda _: None):
                 write_json(imported, info)
             state["state"] = "installed"
             write_json(marker, state)
-            progress("Patch installed. Install and sign in to Fenix, then apply the aircraft settings.")
+            progress("Fenix compatibility patch updated." if upgrade else
+                     "Patch installed. Install and sign in to Fenix, then apply the aircraft settings.")
         except BaseException:
             # Preserve a journal and all profiles; restore is explicitly available
             # after process failure or power loss, without guessing what finished.
@@ -506,12 +526,18 @@ def install(runtime, bundle, progress=lambda _: None):
 
 
 def verify_installed(root, state):
-    lock = manifest()
+    current = manifest()
+    lock = current
+    if state.get("version") != current["version"]:
+        lock = current.get("previous_releases", {}).get(state.get("version"))
+        if lock is None:
+            raise PatchError("This installed patch version is not supported by the current installer.")
     runner = (root / "runner").resolve(strict=True)
     expected = contained(root, state["work"]) / "runner"
     if runner != expected:
         raise PatchError("The active runner changed since patch installation.")
-    for name, sha in lock["files"].items():
+    files = dict(current["runner_files"], **lock["files"])
+    for name, sha in files.items():
         if digest(regular(runner / name)) != sha:
             raise PatchError("Installed patch file changed: " + name)
 
@@ -652,7 +678,10 @@ def snapshot(runtime):
         if marker.exists():
             state = read_json(marker)
             result.update(state=state.get("state", "interrupted"), installed=state.get("state") == "installed",
-                          configured=state.get("configured") is True, can_restore=True)
+                          configured=state.get("configured") is True, can_restore=True,
+                          installed_version=state.get("version"),
+                          update_available=state.get("state") == "installed" and
+                          state.get("version") in manifest().get("previous_releases", {}))
         elif (root / "private/fenix-compat.json").exists():
             result.update(state="legacy", message="An earlier local Fenix patch is active. Keep using it; automatic replacement is disabled.")
         else:

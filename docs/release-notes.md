@@ -1,4 +1,19 @@
-# 0.1.0-preview.1
+# 0.1.0-preview.2
+
+* Fix invisible mouse pointers in the official Fenix Installer and livery
+  manager by sharing selected Wine cursors between the WebView processes.
+* Repair missing 64-bit UI-font registrations before opening Fenix, preventing
+  affected installer startup crashes. Existing fonts come from the user's runner.
+* Update verified preview.1 profiles without reinstalling Fenix or .NET, keeping
+  aircraft, settings and the original restore point.
+* Keep manual Fenix windows accessible and suppress Wine's separate fallback
+  notification-area window.
+
+The Wine overlay now contains ten modules. Complete corresponding source and
+the upstream cursor-patch attribution are included. The pinned runner and
+platform requirements are unchanged. This remains a community preview.
+
+## 0.1.0-preview.1
 
 First packaged version of the locally verified MSFS 2024 / Fenix fixes.
 

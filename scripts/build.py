@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
-"""Rebuild the nine Wine modules from the exact archived sources and patches."""
+"""Rebuild the Wine modules from the exact archived sources and patches."""
 import argparse
 import hashlib
 import json
@@ -18,6 +18,7 @@ TARGETS = {
     "server/wineserver": "files/bin/wineserver",
     **{f"dlls/{n}/x86_64-windows/{n}.dll": f"files/lib/wine/x86_64-windows/{n}.dll" for n in ("crypt32", "mmdevapi", "kernelbase", "d2d1", "dwrite")},
     "dlls/dwrite/dwrite.so": "files/lib/wine/x86_64-unix/dwrite.so",
+    "dlls/win32u/win32u.so": "files/lib/wine/x86_64-unix/win32u.so",
 }
 
 
@@ -82,7 +83,9 @@ def main():
     run(["python3", "dlls/winevulkan/make_vulkan", "--xml", str(source / "dlls/winevulkan/vk.xml"), "--video-xml", str(source / "dlls/winevulkan/video.xml")])
     run(["autoreconf", "-f"])
     output = build / "objects"; output.mkdir()
-    run([str(source / "configure"), "--enable-win64", "--disable-tests", "--enable-silent-rules", "--without-ffmpeg"], output)
+    flags = "-g -O2 -ffile-prefix-map=" + str(ROOT) + "=/usr/src/fenix-a320-linux-patch"
+    run([str(source / "configure"), "--enable-win64", "--disable-tests", "--enable-silent-rules", "--without-ffmpeg",
+         "CFLAGS=" + flags, "CROSSCFLAGS=" + flags], output)
     run(["make", "depend"], output)
     run(["make", "-j" + str(args.jobs), *TARGETS], output)
     for target, relative in TARGETS.items():

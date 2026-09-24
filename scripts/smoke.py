@@ -37,9 +37,10 @@ def main():
                               cwd=work, check=True, timeout=180, **kwargs)
     try:
         run("wineboot", "-u", stdout=subprocess.DEVNULL)
-        for name in ("loader-case-probe", "writecopy-probe", "iocp-smoke", "audio-notification-probe"):
+        for name in ("loader-case-probe", "writecopy-probe", "iocp-smoke", "audio-notification-probe", "shared-cursor-probe"):
             output = work / ("Fenix.exe" if name == "loader-case-probe" else name + ".exe")
             libraries = ["-lole32", "-luuid"] if name == "audio-notification-probe" else []
+            if name == "shared-cursor-probe": libraries = ["-luser32", "-lgdi32"]
             subprocess.run(["x86_64-w64-mingw32-gcc", "-O2", "-o", str(output), str(ROOT / "tests" / (name + ".c")), *libraries], check=True)
             if name == "writecopy-probe": env["WINE_TRACK_WRITECOPY"] = "1"
             with (work / (name + ".log")).open("w") as log:
