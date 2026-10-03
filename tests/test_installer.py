@@ -90,6 +90,36 @@ class InstallerTests(unittest.TestCase):
         self.put(self.bundle / "payload/files/bin/wineserver", "tampered")
         with self.assertRaises(core.PatchError): core.verify_bundle(self.bundle)
 
+    def test_variant_install_and_restore_preserve_proton_selection(self):
+        # Exercise manifest selection itself instead of mocking its result.
+        self.patches[0].stop()
+        with patch.object(core, "ROOT", self.bundle):
+            entry = {key: self.lock[key] for key in ("runner_version", "runner_files", "files")}
+            for name in entry["files"]:
+                self.put(self.bundle / "payload/variants/experimental" / name, "new " + name)
+            self.lock["runner_version"] = "another base runner"
+            self.lock["variants"] = {"experimental": entry}
+            self.put(self.bundle / "bundle.json", json.dumps(self.lock))
+            selected = {"schema": 1, "runner": "local/proton-tests/" + "a" * 32 + "/runner",
+                        "version": "fixture version", "base_runner": "/original/runner"}
+            core.write_json(self.root / "private/proton-selection.json", selected)
+            core.install(self.root, self.bundle)
+            state = core.read_json(self.root / core.MARKER)
+            self.assertEqual(state["variant"], "experimental")
+            self.assertEqual(state["proton_before"], selected)
+            active = core.read_json(self.root / "private/proton-selection.json")
+            self.assertEqual(active["runner"], state["work"] + "/runner")
+            self.assertEqual(active["base_runner"], selected["base_runner"])
+            core.verify_installed(self.root, state)
+            core.restore(self.root)
+            self.assertEqual(core.read_json(self.root / "private/proton-selection.json"), selected)
+
+    def test_classic_wine64_entry_point_is_selected(self):
+        self.assertEqual(core.wine_binary(self.runner).name, "wine")
+        self.put(self.runner / "files/bin/wine64", "64-bit loader")
+        self.assertEqual(core.wine_binary(self.runner).name, "wine64")
+        self.assertEqual(core.wine_env(self.prefix, self.runner)["WINE_DISABLE_FAST_SYNC"], "1")
+
     def prepare_upgrade(self):
         core.install(self.root, self.bundle)
         state = core.read_json(self.root / core.MARKER)

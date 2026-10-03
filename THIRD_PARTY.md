@@ -6,6 +6,13 @@
 * Wine's xgameruntime submodule: https://github.com/xodus-gaming/xgameruntime at
   `64aebcabb8c66121eae25d3bf0ace4b582ebb0da`; included as
   `sources/xgameruntime-source.tar.gz`, with original notices.
+* Proton Experimental Wine: https://github.com/ValveSoftware/wine at
+  `adea6cbac9d00bb22910145354d00c463fcf3afc`; unchanged source archive
+  `sources/experimental-11-wine.tar.gz`.
+* CachyOS Wine: https://github.com/CachyOS/wine-cachyos at
+  `603c2335ab4b26e57512ce19aca7c8ae95485daf`; unchanged source archive
+  `sources/cachyos-10-wine.tar.gz`. Both retain Wine’s LGPL-2.1-or-later
+  licensing and original per-file notices.
 * All modifications to these sources are in `patches/`, in manifest order.
   The patches are LGPL-2.1-or-later. See `licenses/LGPL-2.1.txt`.
 * The selected-cursor sharing fix is backported from GloriousEggroll's
@@ -17,7 +24,7 @@
 The complete sources are in the same binary ZIP and in a separate corresponding
 source archive in each release. Build and relinking instructions are in BUILDING.md.
 The runner itself, its fonts, DXVK and vkd3d binaries are supplied by the user's
-Flightdeck installation and are not redistributed by this project.
+Flightdeck or Proton installation and are not redistributed by this project.
 
 The Direct2D geometry provider is downloaded separately from Microsoft's
 [Platform Update for Windows 7 (KB2670838)](https://www.microsoft.com/en-us/download/details.aspx?id=36805).

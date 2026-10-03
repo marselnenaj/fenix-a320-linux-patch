@@ -18,29 +18,37 @@ from x11_window_check import check_host_windows
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--runner", required=True, type=Path)
+    parser.add_argument("--variant", help="Exact Proton overlay from bundle.json; omitted for Xodus")
     parser.add_argument("--work", type=Path, default=ROOT / "build/smoke")
     parser.add_argument("--cache", type=Path, default=ROOT / "build/downloads")
     args = parser.parse_args()
     original = args.runner.resolve(strict=True)
-    core.verify_runner(original, core.manifest())
+    lock = core.manifest(args.variant)
+    core.verify_runner(original, lock)
     core.verify_bundle(ROOT)
     work = args.work.resolve()
     if work.exists(): raise ValueError("Use a fresh smoke directory")
     work.mkdir(parents=True)
     runner = work / "runner"
     core.copy_tree(original, runner)
-    for name in core.manifest()["files"]:
+    payload = ROOT / "payload"
+    if args.variant:
+        payload /= "variants/" + args.variant
+    for name in lock["files"]:
         target = runner / name
         target.unlink()
-        shutil.copy2(ROOT / "payload" / name, target)
+        shutil.copy2(payload / name, target)
     prefix = work / "prefix"
     env = core.wine_env(prefix, runner)
     env["WINEDLLOVERRIDES"] = "winemenubuilder.exe=d;mscoree,mshtml="
     def run(*args, **kwargs):
-        return subprocess.run([str(runner / "files/bin/wine"), *map(str, args)], env=env,
+        return subprocess.run([str(core.wine_binary(runner)), *map(str, args)], env=env,
                               cwd=work, check=True, timeout=180, **kwargs)
     try:
         run("wineboot", "-u", stdout=subprocess.DEVNULL)
+        # The 32-bit modules are retained from Proton. They must still speak
+        # exactly the protocol of the rebuilt 64-bit server (FSDT uses .NET x86).
+        run(prefix / "drive_c/windows/syswow64/cmd.exe", "/c", "echo 32-bit server ABI OK")
         with (work / "geometry-setup.log").open("w") as log:
             wine = core.Wine(prefix, runner, log)
             wine.env = env
@@ -61,7 +69,7 @@ def main():
                     raise ValueError("Loader spelling regression")
         probe = work / "FenixDisplay.exe"
         subprocess.run(["x86_64-w64-mingw32-gcc", "-O2", "-o", str(probe), str(ROOT / "tests/window-guard-probe.c"), "-luser32"], check=True)
-        guard = subprocess.Popen([str(runner / "files/bin/wine"), str(ROOT / "integration/FenixWindowGuard.exe")], env=env)
+        guard = subprocess.Popen([str(core.wine_binary(runner)), str(ROOT / "integration/FenixWindowGuard.exe")], env=env)
         try:
             for executable, title, renamed, hidden in (
                 ("FenixDisplay.exe", "ProSimA322 Display", "Fenix Display", True),
@@ -76,10 +84,10 @@ def main():
                 target = work / executable
                 if target != probe: shutil.copy2(probe, target)
                 print("X11 scope:", executable, title, flush=True)
-                check_host_windows([str(runner / "files/bin/wine"), str(target), "1", title, renamed], env, work, hidden)
+                check_host_windows([str(core.wine_binary(runner)), str(target), "1", title, renamed], env, work, hidden)
             # The guard remains the fallback outside the opt-in X11 driver.
             fallback = dict(env, WINE_FENIX_HELPER_WINDOWS="0")
-            subprocess.run([str(runner / "files/bin/wine"), str(probe), "0"], env=fallback, cwd=work, check=True, timeout=30)
+            subprocess.run([str(core.wine_binary(runner)), str(probe), "0"], env=fallback, cwd=work, check=True, timeout=30)
         finally:
             guard.terminate()
             guard.wait(timeout=10)

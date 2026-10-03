@@ -33,6 +33,27 @@ remain compatible. Rebuild hashes can differ with compiler/platform/timestamps;
 `--record-build` explicitly records a new binary set for review. Rebuild and
 repin the Flightdeck manifest/release together after validating a changed build.
 
+## Proton overlays
+
+`bundle.json` records each exact runner version and the hashes of its Wine ABI
+partners, original source archive, port and output modules. Build both overlays
+before packaging preview.4:
+
+```sh
+python3 scripts/build-proton.py experimental-11 --build-dir build/experimental --record-build
+python3 scripts/build-proton.py cachyos-10 --build-dir build/cachyos --record-build
+python3 scripts/smoke.py --variant experimental-11 --runner /path/to/Proton-Experimental --work build/experimental-smoke
+python3 scripts/smoke.py --variant cachyos-10 --runner /path/to/Proton-CachyOS --work build/cachyos-smoke
+```
+
+These ports regenerate their own Wine protocol headers (931 and 865 respectively)
+and keep the existing 32-bit clients. They do not import Xodus's mapped-image
+protocol extension: Flightdeck provides the portable Store loader. The selected
+runner's graphics DLLs are not part of the overlay. CachyOS retains its existing
+arc/group rendering; exact path streaming avoids its rotated-arc simplification
+error when computing metrics. Its remote-thread activation-context fix belongs
+in ntdll, while Experimental's implementation is in kernelbase.
+
 For local modifications, change the corresponding source patch and its hash,
 then rebuild. The installer validates its own manifest, so modified binaries
 can be installed by updating that manifest and building your own release.
@@ -54,7 +75,7 @@ source archives and validates binary hashes. It creates:
 * `SHA256SUMS`: checksums for both downloads.
 * `flightdeck-release.json`: the pinned URL/hash used by Flightdeck.
 
-Create a GitHub **prerelease** tagged `v0.1.0-preview.3` and attach the two
+Create a GitHub **prerelease** tagged `v0.1.0-preview.4` and attach the two
 archives plus SHA256SUMS. The tag must contain this project source and
 `bundle.json`; do not commit payload binaries or private prefixes. Use
 `docs/release-notes.md` as the release body. This GitHub release is Flightdeck's

@@ -20,10 +20,13 @@ def main():
     if lock["version"] != __version__:
         raise ValueError("Installer and bundle versions differ")
     verify_bundle(ROOT)
-    for group in ("sources", "patches"):
-        for name, expected in lock[group].items():
-            if digest(ROOT / group / name) != expected:
-                raise ValueError("Source checksum mismatch: " + name)
+    source_archives = {}
+    for entry in (lock, *lock.get("variants", {}).values()):
+        for group in ("sources", "patches"):
+            for name, expected in entry[group].items():
+                if digest(ROOT / group / name) != expected:
+                    raise ValueError("Source checksum mismatch: " + name)
+        source_archives.update(entry["sources"])
     allowed = [ROOT / name for name in ("README.md", "LICENSE", "THIRD_PARTY.md", "BUILDING.md", "bundle.json", "install.sh", ".gitignore")]
     for folder in ("fenix_patch", "patches", "licenses", "scripts", "tests", "docs", "native", ".github"):
         for file in sorted((ROOT / folder).rglob("*")):
@@ -36,7 +39,7 @@ def main():
         data = file.read_bytes()
         if re.search(rb"/home/[A-Za-z0-9_-]+/(?:Work|\.local/share/flightdeck/runtimes)", data) or (b"-----BEGIN " + b"PRIVATE KEY-----") in data or re.search(rb"XBL3[.]0 x=\d+;[A-Za-z0-9_-]{30,}", data):
             raise ValueError("Private content in export: " + str(file.relative_to(ROOT)))
-    archives = [ROOT / "sources" / name for name in lock["sources"]]
+    archives = [ROOT / "sources" / name for name in source_archives]
     output = ROOT / "dist"; output.mkdir(exist_ok=True)
     stem = "fenix-a320-linux-patch-" + lock["version"]
     source_path = output / (stem + "-source.tar.gz")
@@ -47,6 +50,8 @@ def main():
             with file.open("rb") as stream: archive.addfile(info, stream)
     binary_path = output / (stem + "-linux-x86_64.zip")
     binaries = [ROOT / "payload" / name for name in lock["files"]]
+    for variant, entry in lock.get("variants", {}).items():
+        binaries += [ROOT / "payload/variants" / variant / name for name in entry["files"]]
     binaries += [ROOT / "integration" / name for name in lock["integration"] if name.endswith(".exe")]
     with zipfile.ZipFile(binary_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
         for file in sorted(allowed + archives + binaries):

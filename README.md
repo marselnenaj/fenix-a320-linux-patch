@@ -9,8 +9,11 @@ This packages the Wine fixes tested with Fenix **2.4.0.4720**, MSFS 2024
 FCU and radio display rendering were checked in a running cockpit. A complete
 flight and other Fenix versions have not been independently validated.
 
-**Preview.3** fixes route geometry, suppresses helper windows and automatically
-refreshes stale MCDU images after a display restart. See
+**Preview.4** adds matched overlays for Proton Experimental 11.0 (20260924) and
+CachyOS Proton 10.0 sunset. Their loader, memory, audio, cursor, helper-window and
+Direct2D regression probes pass; a complete Fenix/MSFS flight on these runners
+has not been validated. Route geometry and automatic MCDU display refresh remain
+available. See
 [display restart handling](docs/mcdu-restart.md).
 
 ## Install
@@ -32,15 +35,17 @@ opening a terminal. It downloads a pinned, checksummed patch release. Login and
 activation remain in the official Fenix software.
 
 Requirements: x86_64 Linux, Python 3.10+, glibc **2.38+**, GNU `cp`, and the
-exact Xodus runner pinned in `bundle.json`. The graphical installer also needs
+one of the exact Xodus/Proton builds pinned in `bundle.json`. The graphical installer also needs
 Python Tk (`python-tk` on Arch, `python3-tk` on Ubuntu). The Microsoft Framework and geometry
 downloads need internet access. The official Fenix Installer handles its
 WebView2, .NET Desktop Runtime and Visual C++ prerequisites.
 
-This preview does **not** accept arbitrary Proton/Wine builds, MSFS 2020,
-Steam prefixes or a modified runner. A mismatched runner is rejected before
-changes. Existing local development patches are detected by Flightdeck and
-left in use; automatic migration is not attempted.
+Flightdeck can switch a patched installation between supported runners while
+retaining aircraft, add-ons and settings. Each overlay is compiled from that
+runner’s Wine revision; its DXVK/VKD3D stay unchanged. Other Proton builds require
+a matching overlay before Fenix can use them. MSFS 2020 and Steam prefixes remain
+outside this preview. Flightdeck can migrate recognized local Fenix setups when
+switching Proton; arbitrary modified launch scripts are preserved and rejected.
 
 ## Command line
 
@@ -59,7 +64,7 @@ geometry dependency, copies the existing runner's fonts and graphics dependencie
 and installs the compatibility overlay after the staging Wine session exits. It retains the
 original runner, profile and launch scripts. An interrupted installation has a
 recovery journal. Repeating an already completed installation verifies its files.
-Running `install` from preview.3 also updates verified preview.1/preview.2 installations,
+Running `install` from preview.4 also updates verified preview.1–preview.3 installations,
 retaining installed aircraft, settings and the original restore point. Flightdeck
 performs that update before opening Fenix applications when needed.
 

@@ -1,3 +1,23 @@
+# 0.1.0-preview.4 — 3 October 2026
+
+* Add separate, source-matched Fenix overlays for Proton Experimental
+  `experimental-11.0-20260924-x86_64` and CachyOS `cachyos-10.0-sunset-slr`.
+  Preserve each runner's graphics stack and verify its exact Wine ABI partners.
+* Support the classic Wine64 entry point in setup, GSX/.NET helpers and MCDU
+  refresh. Keep 32-bit clients compatible with the rebuilt Wine server.
+* Retain Proton selection when installing/updating Fenix and restore its original
+  selection when explicitly restoring the pre-patch profile.
+* Provide unified launch scripts with both the portable Store loader and Fenix
+  geometry, helper-window and MCDU refresh support.
+
+Fresh-source builds and native regression probes pass for both Proton overlays,
+including 3,564 geometry reference cases, 800 concurrent metric checks and 768
+stroke comparisons. Fresh .NET/Fenix dependency installation, 32-/64-bit CLR
+execution, official FSDT preparation and Flightdeck profile round trips were
+checked in disposable environments. Simulator/Fenix flight behavior and NVIDIA black-view reports
+still require hardware/in-game validation. No Fenix, FSDT or Microsoft installer
+or proprietary dependency is redistributed.
+
 # 0.1.0-preview.3 — 24 September 2026
 
 * Restore route path metrics instead of returning `E_NOTIMPL`.

@@ -175,7 +175,8 @@ def main():
         os.close(lease)
         return 0
     prefix = root / "local/msfs-prefix"
-    wine = (root / "runner/files/bin/wine").resolve(strict=True)
+    binary = root / "runner/files/bin/wine64"
+    wine = (binary if binary.is_file() else root / "runner/files/bin/wine").resolve(strict=True)
     journal = root / "private/fenix-display-refresh.json"
     env = dict(os.environ, WINEPREFIX=str(prefix), WINEDEBUG="-all")
     for key in ("WINE_DLL_FILE_MAP", "WINESERVERSOCKET", "WINEPRELOADRESERVE", "WINELOADERNOEXEC", "WINELOADER", "WINEDLLPATH"):
