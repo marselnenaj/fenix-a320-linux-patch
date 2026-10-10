@@ -22,7 +22,7 @@ import subprocess
 import tarfile
 import uuid
 
-from . import core
+from . import core, vdf
 from .core import PatchError, atomic, contained, digest, read_json, regular, write_json
 
 GAMES = {
@@ -458,9 +458,8 @@ def install(item, bundle, progress=lambda _: None, proton=None):
                 os.rename(previous / path, item.compat / path)
             state["state"] = "installed"
             write_json(item.marker, state)
-            progress("Patch installed. Restart Steam, open %s → Properties → Compatibility, force "
-                     "“%s”. Then install and sign in to Fenix, and apply the aircraft settings."
-                     % (item.title, tool_title(variant)))
+            progress("Patch installed. Next, let Steam use “%s” for %s: quit Steam and choose “select”, or restart "
+                     "Steam and force it under Properties → Compatibility." % (tool_title(variant), item.title))
         except BaseException:
             progress("Setup did not finish. The original profile or its backup is retained. Use Restore.")
             raise
@@ -516,6 +515,12 @@ def restore(item, progress=lambda _: None):
             os.rename(previous, item.compat)
         elif not item.compat.exists():
             raise PatchError("The original profile backup is missing; nothing was removed.")
+        selection = ""
+        if state.get("tool") and selected_tool(item) == state["tool"]:
+            try:
+                write_selection(item, state.get("tool_before"))
+            except (OSError, ValueError, PatchError):
+                selection = " Steam still has the Fenix Proton selected for the simulator: choose another one under Properties → Compatibility."
         removed = False
         if state.get("tool"):
             tool = contained(item.tools, state["tool"])
@@ -530,7 +535,7 @@ def restore(item, progress=lambda _: None):
                   if state.get("retained") else
                   "The original Windows profile is in place. The unfinished copy and its setup log remain in %s."
                   % (item.state / state["work"])) +
-                 (" The Fenix Proton tool was removed: choose another Proton for the simulator in Steam." if removed else ""))
+                 (" The Fenix Proton tool was removed." if removed else "") + selection)
 
 
 def installed_state(item):
@@ -568,12 +573,49 @@ def windows_app(item, executable=None, progress=lambda _: None, *, manager=False
 def selected_tool(item):
     """The compatibility tool Steam currently forces for this simulator, if readable."""
     try:
-        text = (item.root / "config/config.vdf").read_text(errors="replace")
-        mapping = text[text.index('"CompatToolMapping"'):]
-        match = re.search(r'"%s"\s*\{[^{}]*?"name"\s+"([^"]*)"' % item.appid, mapping)
-        return match.group(1) if match else None
-    except (OSError, ValueError):
+        return vdf.compat_tool(regular(item.root / "config/config.vdf", 16 * 1024 * 1024).read_text(), item.appid)
+    except (OSError, ValueError, PatchError):
         return None
+
+
+def steam_running():
+    for proc in Path("/proc").iterdir():
+        try:
+            if proc.name.isdecimal() and proc.stat().st_uid == os.getuid() and \
+                    (proc / "comm").read_text().strip() == "steam":
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def write_selection(item, tool):
+    """Change only this simulator's entry in Steam's configuration; Steam must be closed."""
+    if steam_running():
+        raise PatchError("Steam is running and would overwrite the selection. Quit Steam completely "
+                         "(Steam → Exit), then try again.")
+    path = regular(item.root / "config/config.vdf", 16 * 1024 * 1024)
+    text = path.read_bytes().decode()
+    changed = vdf.set_compat_tool(text, item.appid, tool)
+    if changed != text:
+        stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%S")
+        atomic(item.state / ("steam-config-before-%s.vdf" % stamp), text.encode(), 0o600)
+        atomic(path, changed.encode(), stat.S_IMODE(path.stat().st_mode))
+
+
+def select_tool(item, progress=lambda _: None):
+    """Force the Fenix Proton for the simulator, as Properties → Compatibility does."""
+    with locked(item, idle=False):
+        state = installed_state(item)
+        current = selected_tool(item)
+        if current == state["tool"]:
+            progress("Steam already uses the Fenix Proton for %s." % item.title)
+            return
+        write_selection(item, state["tool"])
+        state["tool_before"] = current
+        state["tool_selected_by_installer"] = True
+        write_json(item.marker, state)
+        progress("Steam will start %s with “%s”. You can start Steam again." % (item.title, tool_title(state["variant"])))
 
 
 def snapshot(item):
@@ -595,8 +637,9 @@ def snapshot(item):
             if result["installed"]:
                 result["tool_selected"] = selected_tool(item) == state.get("tool")
                 if not result["tool_selected"]:
-                    result["message"] = "Restart Steam and force “%s” under Properties → Compatibility for %s." % (
-                        tool_title(state["variant"]), item.title)
+                    result["message"] = "Steam does not use “%s” for %s yet." % (tool_title(state["variant"]), item.title)
+                result["tool_title"] = tool_title(state["variant"])
+                result["steam_running"] = steam_running()
         else:
             core.host_check()
             checked(item)

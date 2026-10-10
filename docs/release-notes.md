@@ -9,8 +9,12 @@
   folder is moved instead of copied. Restore returns the earlier profile.
 * Proton's shared Wine Mono registration and linked framework placeholders are
   removed before Microsoft .NET setup, which otherwise installs nothing.
-* The graphical installer lists the simulators it finds. Flightdeck runtimes
-  keep working with the same commands.
+* New guided setup in the web browser, served only to the local computer, in
+  place of the Tk window: one step at a time, finished steps ticked, resumable.
+  No additional packages are needed; `--text` offers the same in a terminal.
+* With Steam closed, the installer enters the Fenix Proton for the simulator
+  in Steam's configuration and restore removes it again.
+* Flightdeck runtimes keep working with the same commands.
 
 Verified in a reproduced Steam library whose profile was created by Proton
 Experimental: pinned Proton download, .NET Framework 4.8 (32- and 64-bit CLR

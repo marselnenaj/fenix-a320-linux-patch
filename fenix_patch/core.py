@@ -746,7 +746,10 @@ def windows_app(runtime, executable=None, progress=lambda _: None, *, manager=Fa
 def run_app(prefix, runner, path, executable=None, progress=lambda _: None, *, manager=False, wait=None):
     """Run an official Fenix program; the caller holds the profile's lock."""
     if executable:
-        app = Path(executable).expanduser().resolve(strict=True)
+        try:
+            app = Path(executable).expanduser().resolve(strict=True)
+        except OSError:
+            raise PatchError("This file does not exist: " + str(executable)) from None
         regular(app, 1024 ** 3)
         with app.open("rb") as stream:
             signature = stream.read(2)

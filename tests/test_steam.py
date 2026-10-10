@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
-from fenix_patch import core, steam, targets
+from fenix_patch import core, guide, steam, targets, vdf
 
 
 class SteamTests(unittest.TestCase):
@@ -60,7 +60,7 @@ class SteamTests(unittest.TestCase):
                         patch.object(core, "Wine"), patch.object(core, "prepare_framework"),
                         patch.object(core, "graphics_and_fonts"), patch.object(core, "prepare_geometry"),
                         patch.object(steam, "proton_setup", side_effect=proton_setup),
-                        patch.object(steam, "PROTON_DOWNLOADS", {})]
+                        patch.object(steam, "PROTON_DOWNLOADS", {}), patch.object(steam, "steam_running", return_value=False)]
         for item in self.patches: item.start()
 
     def tearDown(self):
@@ -214,8 +214,66 @@ class SteamTests(unittest.TestCase):
         status = steam.snapshot(self.item)
         self.assertTrue(status["installed"] and status["fenix_installed"])
         self.assertFalse(status["tool_selected"])
-        self.put(self.root / "config/config.vdf", '"CompatToolMapping"\n{\n "2537590"\n {\n  "name"  "Proton-Fenix-A320-fixture"\n  "config" ""\n }\n}\n')
+        self.put(self.root / "config/config.vdf", CONFIG)
+        steam.select_tool(self.item)
         self.assertTrue(steam.snapshot(self.item)["tool_selected"])
+
+    def test_selection_changes_only_this_simulator_and_restore_undoes_it(self):
+        steam.install(self.item, self.bundle)
+        self.put(self.root / "config/config.vdf", CONFIG)
+        with patch.object(steam, "steam_running", return_value=True):
+            with self.assertRaisesRegex(core.PatchError, "Quit Steam"):
+                steam.select_tool(self.item)
+        self.assertEqual((self.root / "config/config.vdf").read_text(), CONFIG)
+        steam.select_tool(self.item)
+        text = (self.root / "config/config.vdf").read_text()
+        self.assertEqual(vdf.compat_tool(text, "2537590"), "Proton-Fenix-A320-fixture")
+        self.assertEqual(vdf.compat_tool(text, "440"), "proton_experimental")
+        self.assertEqual(text.replace(ENTRY, ""), CONFIG)
+        self.assertEqual([p.read_text() for p in self.item.state.glob("steam-config-before-*.vdf")], [CONFIG])
+        steam.restore(self.item)
+        self.assertEqual((self.root / "config/config.vdf").read_text(), CONFIG)
+
+    def test_restore_returns_a_previously_forced_tool(self):
+        steam.install(self.item, self.bundle)
+        before = vdf.set_compat_tool(CONFIG, "2537590", "proton_experimental")
+        self.put(self.root / "config/config.vdf", before)
+        steam.select_tool(self.item)
+        self.assertEqual(steam.selected_tool(self.item), "Proton-Fenix-A320-fixture")
+        with patch.object(steam, "steam_running", return_value=True):
+            messages = []
+            steam.restore(self.item, messages.append)
+        # Steam was running: its configuration is left alone and the user is told.
+        self.assertIn("Properties → Compatibility", messages[-1])
+        self.assertEqual(steam.selected_tool(self.item), "Proton-Fenix-A320-fixture")
+
+    def test_guide_leads_through_the_steps_in_order(self):
+        target = targets.Steam(self.item)
+        self.put(self.root / "config/config.vdf", CONFIG)
+        def current():
+            view = guide.overview(target)
+            return view["current"], [step["id"] for step in view["steps"] if step["done"]]
+        self.assertEqual(current(), ("install", []))
+        messages = []
+        guide.perform(target, "install", self.bundle, messages.append)
+        self.assertEqual(current(), ("select", ["install"]))
+        guide.perform(target, "select", self.bundle, messages.append)
+        self.assertEqual(current(), ("installer", ["install", "select"]))
+        with self.assertRaisesRegex(core.PatchError, "Choose the Fenix Installer"):
+            guide.perform(target, "installer", self.bundle, messages.append)
+        self.put(self.prefix / core.PROGRAM / "Fenix.exe", "MZ")
+        self.assertEqual(current()[0], "open")
+        self.put(self.prefix / core.CONFIG / "fenixConfig.xml", "<config/>")
+        self.put(self.prefix / core.CONFIG / "persistancy.xml", "<state/>")
+        self.assertEqual(current()[0], "configure")
+        guide.perform(target, "configure", self.bundle, messages.append)
+        view = guide.overview(target)
+        self.assertTrue(view["complete"] and view["can_restore"])
+        self.assertIn("from Steam", view["finish"])
+        core.write_json(self.item.marker, {**core.read_json(self.item.marker), "state": "committing"})
+        view = guide.overview(target)
+        self.assertTrue(view["broken"] and view["current"] is None and view["can_restore"])
+        self.assertIn("Restore", view["message"])
 
     def test_symlinked_profile_is_rejected(self):
         moved = self.base / "elsewhere"
@@ -223,6 +281,68 @@ class SteamTests(unittest.TestCase):
         self.item.compat.symlink_to(moved)
         with self.assertRaisesRegex(core.PatchError, "ordinary directories"):
             steam.install(self.item, self.bundle)
+
+
+ENTRY = '\t\t\t\t\t"2537590"\n\t\t\t\t\t{\n\t\t\t\t\t\t"name"\t\t"Proton-Fenix-A320-fixture"\n' \
+        '\t\t\t\t\t\t"config"\t\t""\n\t\t\t\t\t\t"priority"\t\t"250"\n\t\t\t\t\t}\n'
+CONFIG = """"InstallConfigStore"
+{
+\t"Software"
+\t{
+\t\t"Valve"
+\t\t{
+\t\t\t"Steam"
+\t\t\t{
+\t\t\t\t"Accounts"
+\t\t\t\t{
+\t\t\t\t\t"someone"
+\t\t\t\t\t{
+\t\t\t\t\t\t"SteamID"\t\t"1"
+\t\t\t\t\t}
+\t\t\t\t}
+\t\t\t\t"CompatToolMapping"
+\t\t\t\t{
+\t\t\t\t\t"440"
+\t\t\t\t\t{
+\t\t\t\t\t\t"name"\t\t"proton_experimental"
+\t\t\t\t\t\t"config"\t\t""
+\t\t\t\t\t\t"priority"\t\t"250"
+\t\t\t\t\t}
+\t\t\t\t}
+\t\t\t\t"quoted"\t\t"a \\"brace\\" { inside"
+\t\t\t}
+\t\t}
+\t}
+\t"WebStorage"
+\t{
+\t}
+}
+"""
+
+
+class ConfigTests(unittest.TestCase):
+    def test_mapping_is_created_replaced_and_removed_without_touching_anything_else(self):
+        bare = CONFIG.replace(CONFIG[CONFIG.index('\t\t\t\t"CompatToolMapping"'):CONFIG.index('\t\t\t\t"quoted"')], "")
+        self.assertIsNone(vdf.compat_tool(bare, "440"))
+        created = vdf.set_compat_tool(bare, "1250410", "Tool A")
+        self.assertEqual(vdf.compat_tool(created, "1250410"), "Tool A")
+        self.assertEqual(vdf.plain(vdf.parse(created))[0][1][1][0], "WebStorage")
+        replaced = vdf.set_compat_tool(created, "1250410", "Tool B")
+        self.assertEqual(vdf.compat_tool(replaced, "1250410"), "Tool B")
+        self.assertEqual(len(replaced), len(created))
+        self.assertEqual(vdf.set_compat_tool(vdf.set_compat_tool(CONFIG, "1250410", "Tool A"), "1250410", None), CONFIG)
+        self.assertEqual(vdf.set_compat_tool(CONFIG, "1250410", None), CONFIG)
+        self.assertEqual(vdf.set_compat_tool(created, "1250410", None), bare)
+
+    def test_unknown_layouts_and_names_are_rejected(self):
+        for text in ('"Other"\n{\n}\n', CONFIG[:-3], CONFIG.replace('"Valve"', 'Valve'), ""):
+            with self.subTest(text=text[:20]), self.assertRaises(core.PatchError):
+                vdf.set_compat_tool(text, "1250410", "Tool")
+        for tool in ('bad"name', "bad\nname", ""):
+            with self.assertRaises(core.PatchError):
+                vdf.set_compat_tool(CONFIG, "1250410", tool)
+        with self.assertRaises(core.PatchError):
+            vdf.set_compat_tool(CONFIG, "12x", "Tool")
 
 
 if __name__ == "__main__":

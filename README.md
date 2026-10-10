@@ -22,14 +22,17 @@ available. See
 1. Start MSFS 2020 or 2024 once in Steam, then close it.
 2. Download and extract the **Linux installer ZIP** from
    [Releases](https://github.com/marselnenaj/fenix-a320-linux-patch/releases)
-   and run `./install.sh`. Choose the Steam simulator, then **Install patch +
-   Microsoft .NET**. No `sudo` is needed.
-3. Restart Steam. In the simulator's *Properties → Compatibility*, force
-   **Proton Fenix A320**. The installer creates this separate Proton because
-   Steam keeps updating Proton Experimental; your other Proton versions and
-   games are not changed.
-4. Run the official Fenix Installer, open Fenix and sign in, then apply CPU
-   displays + Legacy readouts, exactly as in steps 4–6 below.
+   and run `./install.sh` (or double-click *Fenix A320 Linux Patch*). A guided
+   setup opens in your browser; it runs only on your computer. No `sudo` is needed.
+3. Follow its five steps. Each shows what it does and one button: install the
+   patch, let Steam use **Proton Fenix A320**, run the official Fenix Installer,
+   sign in, apply the display settings. Finished steps are ticked, so you can
+   close the setup and continue later.
+
+The installer creates the separate Proton because Steam keeps updating Proton
+Experimental; your other Proton versions and games are not changed. With Steam
+closed it selects that Proton for the simulator itself; otherwise force it under
+*Properties → Compatibility*. `./install.sh --text` runs the same steps in a terminal.
 
 The Steam path has not been run with a real Steam simulator yet, and MSFS 2020
 with Fenix is untested. See [Steam details and limits](docs/steam.md).
@@ -39,22 +42,22 @@ with Fenix is untested. See [Steam details and limits](docs/steam.md).
 1. Install and run MSFS 2024 once using Flightdeck. Close the simulator and Fenix.
 2. Download and extract the **Linux installer ZIP** from
    [Releases](https://github.com/marselnenaj/fenix-a320-linux-patch/releases).
-3. Run `./install.sh` inside the extracted folder. Choose your Flightdeck runtime,
-   then **Install patch + Microsoft .NET**. No `sudo` is needed.
+3. Run `./install.sh` inside the extracted folder and choose the Flightdeck
+   simulator in the guided setup, then **Install patch**. No `sudo` is needed.
 4. Download the official Fenix Installer from your
-   [Fenix account](https://fenixsim.com/dashboard/). Choose **Run official Fenix
+   [Fenix account](https://fenixsim.com/dashboard/). Choose **Run Fenix
    Installer**, complete its prerequisites and aircraft installation, then close it.
-5. Choose **Open Fenix / sign in**. Activate your purchased aircraft normally,
+5. Choose **Open Fenix**. Sign in and activate your purchased aircraft normally,
    then close Fenix and its helpers.
-6. Choose **Apply CPU displays + Legacy readouts**. Launch MSFS through Flightdeck.
+6. Choose **Apply settings** (CPU displays + Legacy readouts). Launch MSFS through Flightdeck.
 
 Flightdeck's **Add-ons → Fenix A320** panel provides the same workflow without
 opening a terminal. It downloads a pinned, checksummed patch release. Login and
 activation remain in the official Fenix software.
 
 Requirements: x86_64 Linux, Python 3.10+, glibc **2.38+**, GNU `cp`, and the
-one of the exact Xodus/Proton builds pinned in `bundle.json`. The graphical installer also needs
-Python Tk (`python-tk` on Arch, `python3-tk` on Ubuntu). The Microsoft Framework and geometry
+one of the exact Xodus/Proton builds pinned in `bundle.json`. The guided setup uses your
+web browser and needs no additional packages. The Microsoft Framework and geometry
 downloads need internet access. The official Fenix Installer handles its
 WebView2, .NET Desktop Runtime and Visual C++ prerequisites.
 
@@ -73,6 +76,7 @@ finds. `--steam msfs2020|msfs2024` takes the same commands as `--runtime`.
 ```sh
 ./install.sh targets
 ./install.sh install --steam msfs2024
+./install.sh select --steam msfs2024      # with Steam closed
 ./install.sh status --runtime /path/to/flightdeck/runtime
 ./install.sh install --runtime /path/to/flightdeck/runtime
 ./install.sh installer --runtime /path/to/flightdeck/runtime --exe "$HOME/Downloads/FenixInstaller.exe"

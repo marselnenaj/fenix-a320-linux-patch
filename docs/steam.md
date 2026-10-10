@@ -25,9 +25,11 @@ and verified by checksum. `--proton /path` selects a specific supported build.
 ## Install
 
 1. Start the simulator once in Steam, so that its Windows profile exists. Close it.
-2. Run `./install.sh` and choose the Steam simulator, or
+2. Run `./install.sh` and follow the guided setup, or
    `./install.sh install --steam msfs2024` (`msfs2020`).
-3. **Restart Steam.** Open the simulator's *Properties → Compatibility*, enable
+3. Let Steam use the new Proton. With Steam closed, the setup's second step or
+   `./install.sh select --steam msfs2024` enters it for the simulator. By hand:
+   restart Steam, open the simulator's *Properties → Compatibility*, enable
    *Force the use of a specific Steam Play compatibility tool* and choose
    **Proton Fenix A320 (…)**. `status` reports whether Steam has this selection.
 4. Continue as usual: run the official Fenix Installer, open Fenix and sign in,
@@ -37,6 +39,7 @@ and verified by checksum. `--proton /path` selects a specific supported build.
 ./install.sh targets
 ./install.sh status    --steam msfs2024
 ./install.sh install   --steam msfs2024
+./install.sh select    --steam msfs2024
 ./install.sh installer --steam msfs2024 --exe "$HOME/Downloads/FenixInstaller.exe"
 ./install.sh open      --steam msfs2024
 ./install.sh configure --steam msfs2024
@@ -59,11 +62,15 @@ Flatpak and Snap Steam are detected but untested.
 * `compatibilitytools.d/Proton-Fenix-A320-<variant>` holds the Proton copy with
   the overlay and a `user_settings.py` with the Fenix environment. Like
   Flightdeck, it runs the simulator without esync/fsync.
-* Steam's own configuration is not edited; you select the tool yourself.
+* `select` changes one entry in Steam's `config/config.vdf`: the compatibility
+  tool of this simulator. It refuses while Steam runs, keeps a copy of the file
+  next to the patch state and rejects a file it does not fully understand.
+  Whether Steam accepts the entry was not checked with a running Steam client.
 
 `restore` returns the earlier profile, keeps the newer one as `retained-…` and
-removes the Fenix Proton when no other simulator uses it. Choose another Proton
-for the simulator in Steam afterwards.
+removes the Fenix Proton when no other simulator uses it. With Steam closed it
+also returns the simulator's earlier compatibility setting; otherwise choose
+another Proton for the simulator in Steam afterwards.
 
 ## Limits of this preview
 

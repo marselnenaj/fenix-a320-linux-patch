@@ -11,6 +11,7 @@ class Flightdeck:
     def __init__(self, runtime):
         self.runtime = str(runtime)
         self.label = "Flightdeck · " + self.runtime
+        self.title = "MSFS 2024 in Flightdeck"
 
     def install(self, bundle, progress, proton=None):
         core.install(self.runtime, bundle, progress)
@@ -27,6 +28,10 @@ class Flightdeck:
     def status(self):
         return core.snapshot(self.runtime)
 
+    @property
+    def prefix(self):
+        return Path(self.runtime) / "local/msfs-prefix"
+
 
 class Steam:
     kind = "steam"
@@ -34,6 +39,7 @@ class Steam:
     def __init__(self, item):
         self.item = item
         self.label = "Steam · %s · %s" % (item.title, item.library)
+        self.title = item.title + " on Steam"
 
     def install(self, bundle, progress, proton=None):
         steam.install(self.item, bundle, progress, proton)
@@ -49,6 +55,13 @@ class Steam:
 
     def status(self):
         return steam.snapshot(self.item)
+
+    def select(self, progress):
+        steam.select_tool(self.item, progress)
+
+    @property
+    def prefix(self):
+        return self.item.prefix
 
 
 def detect(steam_root=None):
