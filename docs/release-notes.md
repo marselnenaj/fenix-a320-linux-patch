@@ -1,3 +1,23 @@
+# Unreleased
+
+* Standalone installation for the Steam editions of MSFS 2020 and 2024
+  (`./install.sh install --steam msfs2024`). The installer creates a separate
+  compatibility tool, *Proton Fenix A320*, from the pinned CachyOS Proton and
+  downloads that build when it is not installed. Proton Experimental and other
+  tools are left unchanged. See [steam.md](steam.md).
+* The Windows profile is exchanged transactionally; the simulator's `Packages`
+  folder is moved instead of copied. Restore returns the earlier profile.
+* Proton's shared Wine Mono registration and linked framework placeholders are
+  removed before Microsoft .NET setup, which otherwise installs nothing.
+* The graphical installer lists the simulators it finds. Flightdeck runtimes
+  keep working with the same commands.
+
+Verified in a reproduced Steam library whose profile was created by Proton
+Experimental: pinned Proton download, .NET Framework 4.8 (32- and 64-bit CLR
+through the tool's launcher), geometry dependency, overlay, Proton's own
+profile refresh, restore and repeat installation. **Not yet run with a real
+Steam simulator or Fenix on Steam**; MSFS 2020 with Fenix is untested.
+
 # 0.1.0-preview.4 — 3 October 2026
 
 * Add separate, source-matched Fenix overlays for Proton Experimental

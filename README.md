@@ -1,7 +1,8 @@
 # Fenix A320 Linux Patch
 
 Compatibility fixes and an installer for **Fenix A320 with MSFS 2024 in
-[Flightdeck](https://github.com/marselnenaj/flightdeck-msfs-2024-linux-xbox)**.
+[Flightdeck](https://github.com/marselnenaj/flightdeck-msfs-2024-linux-xbox)** and,
+as an untested first version, for the **Steam editions of MSFS 2020 and 2024**.
 Community preview; independent of Fenix Simulations, Microsoft and Asobo.
 
 This packages the Wine fixes tested with Fenix **2.4.0.4720**, MSFS 2024
@@ -16,7 +17,24 @@ has not been validated. Route geometry and automatic MCDU display refresh remain
 available. See
 [display restart handling](docs/mcdu-restart.md).
 
-## Install
+## Install on Steam
+
+1. Start MSFS 2020 or 2024 once in Steam, then close it.
+2. Download and extract the **Linux installer ZIP** from
+   [Releases](https://github.com/marselnenaj/fenix-a320-linux-patch/releases)
+   and run `./install.sh`. Choose the Steam simulator, then **Install patch +
+   Microsoft .NET**. No `sudo` is needed.
+3. Restart Steam. In the simulator's *Properties → Compatibility*, force
+   **Proton Fenix A320**. The installer creates this separate Proton because
+   Steam keeps updating Proton Experimental; your other Proton versions and
+   games are not changed.
+4. Run the official Fenix Installer, open Fenix and sign in, then apply CPU
+   displays + Legacy readouts, exactly as in steps 4–6 below.
+
+The Steam path has not been run with a real Steam simulator yet, and MSFS 2020
+with Fenix is untested. See [Steam details and limits](docs/steam.md).
+
+## Install in Flightdeck
 
 1. Install and run MSFS 2024 once using Flightdeck. Close the simulator and Fenix.
 2. Download and extract the **Linux installer ZIP** from
@@ -43,13 +61,18 @@ WebView2, .NET Desktop Runtime and Visual C++ prerequisites.
 Flightdeck can switch a patched installation between supported runners while
 retaining aircraft, add-ons and settings. Each overlay is compiled from that
 runner’s Wine revision; its DXVK/VKD3D stay unchanged. Other Proton builds require
-a matching overlay before Fenix can use them. MSFS 2020 and Steam prefixes remain
+a matching overlay before Fenix can use them. In Flightdeck, MSFS 2020 remains
 outside this preview. Flightdeck can migrate recognized local Fenix setups when
 switching Proton; arbitrary modified launch scripts are preserved and rejected.
 
 ## Command line
 
+Without `--runtime` or `--steam`, the installer uses the only simulator it
+finds. `--steam msfs2020|msfs2024` takes the same commands as `--runtime`.
+
 ```sh
+./install.sh targets
+./install.sh install --steam msfs2024
 ./install.sh status --runtime /path/to/flightdeck/runtime
 ./install.sh install --runtime /path/to/flightdeck/runtime
 ./install.sh installer --runtime /path/to/flightdeck/runtime --exe "$HOME/Downloads/FenixInstaller.exe"

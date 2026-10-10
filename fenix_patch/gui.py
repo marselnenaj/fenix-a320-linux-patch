@@ -3,60 +3,68 @@
 import queue
 import threading
 import webbrowser
-from . import core
+from . import core, targets
 
 
-def main(runtime, bundle):
+def main(found, bundle, proton=None):
     try:
         import tkinter as tk
         from tkinter import filedialog, ttk
     except ImportError:
-        raise core.PatchError("Install Python Tk for the graphical installer, or run: ./install.sh install --runtime /path/to/runtime") from None
+        raise core.PatchError("Install Python Tk for the graphical installer, or run: ./install.sh install --steam msfs2024") from None
+    found = list(found)
     window = tk.Tk()
     window.title("Fenix A320 · Linux Patch")
-    window.geometry("720x550")
+    window.geometry("760x600")
     panel = ttk.Frame(window, padding=24)
     panel.pack(fill="both", expand=True)
     ttk.Label(panel, text="Fenix A320 Linux Patch", font=("sans", 20, "bold")).pack(anchor="w")
-    ttk.Label(panel, text="MSFS 2024 · Flightdeck · Community preview", padding=(0, 6)).pack(anchor="w")
+    ttk.Label(panel, text="MSFS 2020 / 2024 · Steam and Flightdeck · Community preview", padding=(0, 6)).pack(anchor="w")
     ttk.Label(panel, text="Close MSFS and Fenix before setup. A profile backup is kept.\nRequires your purchased Fenix aircraft and its official installer.").pack(anchor="w", pady=8)
-    selected = tk.StringVar(value=runtime)
     row = ttk.Frame(panel); row.pack(fill="x", pady=10)
-    ttk.Entry(row, textvariable=selected).pack(side="left", fill="x", expand=True)
+    choice = ttk.Combobox(row, state="readonly", values=[item.label for item in found])
+    choice.pack(side="left", fill="x", expand=True)
+    if found: choice.current(0)
     def browse():
-        value = filedialog.askdirectory(title="Flightdeck MSFS 2024 runtime", initialdir=selected.get())
-        if value: selected.set(value)
-    ttk.Button(row, text="Browse…", command=browse).pack(side="right")
+        value = filedialog.askdirectory(title="Flightdeck MSFS 2024 runtime", initialdir=str(core.default_runtime()))
+        if value:
+            found.append(targets.Flightdeck(value))
+            choice.configure(values=[item.label for item in found]); choice.current(len(found) - 1)
+    ttk.Button(row, text="Flightdeck runtime…", command=browse).pack(side="right", padx=(8, 0))
     events = queue.Queue()
     buttons = []
-    status = tk.StringVar(value="1. Install the patch, then complete steps 2–4.")
+    status = tk.StringVar(value="1. Install the patch, then complete steps 2–4." if found else
+                          "No simulator found. Start MSFS once in Steam and reopen this installer, or choose a Flightdeck runtime.")
     output = tk.Text(panel, height=8, wrap="word", state="disabled")
     busy = False
     def run(operation):
         nonlocal busy
         if busy: return
+        if choice.current() < 0:
+            status.set("Choose a simulator first.")
+            return
         busy = True
         for button in buttons: button.configure(state="disabled")
-        path = selected.get()
+        target = found[choice.current()]
         def worker():
-            try: operation(path, lambda message: events.put(message))
+            try: operation(target, lambda message: events.put(message))
             except Exception as error: events.put("Error: " + str(error))
             finally: events.put(None)
         threading.Thread(target=worker, daemon=True).start()
     def installer():
         path = filedialog.askopenfilename(title="Official Fenix Installer", filetypes=[("Windows installer", "*.exe")])
-        if path: run(lambda runtime, progress: core.windows_app(runtime, path, progress))
+        if path: run(lambda target, progress: target.app(progress, path))
     actions = [
-        ("1 · Install patch + Microsoft .NET", lambda: run(lambda path, progress: core.install(path, bundle, progress))),
+        ("1 · Install patch + Microsoft .NET", lambda: run(lambda target, progress: target.install(bundle, progress, proton))),
         ("2 · Run official Fenix Installer…", installer),
-        ("3 · Open Fenix / sign in", lambda: run(lambda path, progress: core.windows_app(path, progress=progress))),
-        ("4 · Apply CPU displays + Legacy readouts", lambda: run(core.configure)),
-        ("Restore original profile (current profile is retained)", lambda: run(core.restore)),
+        ("3 · Open Fenix / sign in", lambda: run(lambda target, progress: target.app(progress))),
+        ("4 · Apply CPU displays + Legacy readouts", lambda: run(lambda target, progress: target.configure(progress))),
+        ("Restore original profile (current profile is retained)", lambda: run(lambda target, progress: target.restore(progress))),
     ]
     for title, command in actions:
         button = ttk.Button(panel, text=title, command=command); button.pack(fill="x", pady=3); buttons.append(button)
     ttk.Button(panel, text="Fenix account / official download", command=lambda: webbrowser.open("https://fenixsim.com/dashboard/")).pack(anchor="w", pady=6)
-    ttk.Label(panel, textvariable=status, wraplength=660).pack(anchor="w")
+    ttk.Label(panel, textvariable=status, wraplength=700).pack(anchor="w")
     output.pack(fill="both", expand=True, pady=8)
     def poll():
         nonlocal busy

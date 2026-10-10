@@ -1,9 +1,31 @@
 # Fenix A320 unter Linux
 
 Dieses Community-Paket richtet die getesteten Fenix-Korrekturen für
-**MSFS 2024 in Flightdeck** ein. Unterstützt wird ausschließlich der in
-`bundle.json` festgelegte Xodus-Wine-Runner. Andere Wine-/Proton-Versionen und
-MSFS 2020 werden vor Änderungen abgewiesen.
+**MSFS 2024 in Flightdeck** und, als ungetestete erste Fassung, für die
+**Steam-Versionen von MSFS 2020 und 2024** ein. Unterstützt werden ausschließlich
+die in `bundle.json` festgelegten Wine-/Proton-Stände; andere werden vor
+Änderungen abgewiesen.
+
+## Steam (MSFS 2020 / 2024)
+
+Der Installer funktioniert auch ohne Flightdeck mit den Steam-Versionen. Dieser
+Weg wurde noch nicht mit einem echten Steam-Simulator geprüft; MSFS 2020 mit
+Fenix ist ungetestet.
+
+1. Den Simulator einmal in Steam starten und wieder schließen.
+2. `./install.sh` starten, den Steam-Simulator wählen und den Patch einrichten
+   (oder `./install.sh install --steam msfs2024`).
+3. Steam neu starten. Beim Simulator unter *Eigenschaften → Kompatibilität*
+   **Proton Fenix A320** erzwingen. Der Installer legt dieses eigene Proton an,
+   weil Steam Proton Experimental laufend aktualisiert und die Korrekturen zu
+   genau einem Wine-Stand gehören. Andere Proton-Versionen und Spiele bleiben
+   unverändert.
+4. Weiter mit den Schritten 4 bis 6 unten.
+
+Der Ordner `Packages` im Profil wird verschoben statt kopiert. Einzelheiten und
+Grenzen: [steam.md](steam.md).
+
+## Flightdeck (MSFS 2024)
 
 1. MSFS einmal mit Flightdeck starten und danach Simulator und Fenix schließen.
 2. Das Linux-Installer-ZIP aus den GitHub-Releases entpacken und `./install.sh`
