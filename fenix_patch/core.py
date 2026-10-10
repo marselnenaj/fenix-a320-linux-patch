@@ -344,7 +344,7 @@ def has_framework(prefix):
         return False
 
 
-def prepare_framework(wine, cache, progress):
+def prepare_framework(wine, cache, progress, first_version="winxp"):
     if has_framework(wine.prefix):
         progress("Microsoft .NET Framework 4.8 is already installed.")
         return
@@ -359,7 +359,7 @@ def prepare_framework(wine, cache, progress):
         guid, _, title = line.partition("|")
         if title.startswith("Wine Mono") and re.fullmatch(r"\{[a-fA-F0-9-]{36}\}", guid):
             wine.run("uninstaller", "--silent", "--remove", guid)
-    wine.reg(r"HKCU\Software\Wine", "Version", "winxp")
+    wine.reg(r"HKCU\Software\Wine", "Version", first_version)
     try:
         wine.run(packages["dotNetFx40_Full_x86_x64.exe"], "/q", "/c:install.exe /q /norestart",
                  env={"WINEDLLOVERRIDES": "fusion=b;winemenubuilder.exe=d"}, accepted=(0, 194))
@@ -472,7 +472,7 @@ def xml_settings(path, changes):
     return True
 
 
-def configure_prefix(prefix):
+def configure_prefix(prefix, folder="Microsoft Flight Simulator 2024"):
     if not (prefix / PROGRAM / "Fenix.exe").is_file():
         return False
     settings = contained(prefix, CONFIG / "fenixConfig.xml")
@@ -482,10 +482,11 @@ def configure_prefix(prefix):
     # The official installer owns the aircraft and its Community location.
     # Register its unchanged bootstrapper in the simulator's actual user profile.
     homes = [p for p in (prefix / "drive_c/users").iterdir() if p.name not in ("Public", "Default", "Default User") and p.is_dir()]
-    candidates = [contained(prefix, p.relative_to(prefix) / "AppData/Roaming/Microsoft Flight Simulator 2024") for p in homes]
+    candidates = [contained(prefix, p.relative_to(prefix) / "AppData/Roaming" / folder) for p in homes]
     candidates = [p for p in candidates if p.is_dir()]
     if len(candidates) != 1:
-        raise PatchError("Could not identify one MSFS 2024 settings folder. Run the simulator once first.")
+        raise PatchError("Could not identify one %s settings folder. Run the simulator once first."
+                         % folder.replace("Microsoft Flight Simulator", "MSFS"))
     path = candidates[0] / "exe.xml"
     if path.exists():
         raw = regular(path, 2 * 1024 * 1024).read_bytes()
@@ -738,54 +739,60 @@ def windows_app(runtime, executable=None, progress=lambda _: None, *, manager=Fa
             verify_installed(root, state)
         elif executable or not (root / "private/fenix-compat.json").is_file():
             raise PatchError("Install the compatibility patch first.")
-        prefix = root / "local/msfs-prefix"
-        if executable:
-            app = Path(executable).expanduser().resolve(strict=True)
-            regular(app, 1024 ** 3)
-            with app.open("rb") as stream:
-                signature = stream.read(2)
-            if app.suffix.lower() != ".exe" or signature != b"MZ":
-                raise PatchError("Select the official Fenix Installer .exe from your Fenix account.")
-        elif manager:
-            app = manager_path(prefix)
-        else:
-            app = regular(prefix / PROGRAM / "Fenix.exe")
-        runner = (root / "runner").resolve(strict=True)
-        path = root / "private/fenix-app.log"
-        fd = os.open(path, os.O_CREAT | os.O_APPEND | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+        run_app(root / "local/msfs-prefix", (root / "runner").resolve(strict=True),
+                root / "private/fenix-app.log", executable, progress, manager=manager, wait=wait)
+
+
+def run_app(prefix, runner, path, executable=None, progress=lambda _: None, *, manager=False, wait=None):
+    """Run an official Fenix program; the caller holds the profile's lock."""
+    if executable:
         try:
-            wine = Wine(prefix, runner, fd)
-            ensure_ui_fonts(prefix, runner, wine)
-            # Wine's fallback notification area otherwise becomes a separate
-            # blank window on desktops without an XEmbed tray. Scope to this
-            # runtime; the main Fenix UI remains available through Flightdeck.
-            wine.reg(r"HKCU\Software\Wine\Explorer", "ShowSystray", "0", "REG_DWORD")
-            progress("Fenix is open. Complete its setup or sign-in, then close the application to continue.")
-            args = [str(wine_binary(runner)), str(app)]
-            options = dict(cwd=app.parent, env=wine_env(prefix, runner), stdin=subprocess.DEVNULL,
-                           stdout=fd, stderr=subprocess.STDOUT)
-            if wait is None:
-                subprocess.run(args, **options, check=True)
-            else:
-                # A launcher may offer cancellation while retaining this exact
-                # runtime lease through companion cleanup. The default CLI/GUI
-                # still simply waits for the official application to exit.
-                child = subprocess.Popen(args, **options)
-                try:
-                    result = wait(child)
-                except BaseException:
-                    if child.poll() is None:
-                        child.terminate()
-                        try:
-                            child.wait(timeout=3)
-                        except subprocess.TimeoutExpired:
-                            child.kill()
-                            child.wait()
-                    raise
-                if result:
-                    raise subprocess.CalledProcessError(result, args)
-        finally:
-            os.close(fd)
+            app = Path(executable).expanduser().resolve(strict=True)
+        except OSError:
+            raise PatchError("This file does not exist: " + str(executable)) from None
+        regular(app, 1024 ** 3)
+        with app.open("rb") as stream:
+            signature = stream.read(2)
+        if app.suffix.lower() != ".exe" or signature != b"MZ":
+            raise PatchError("Select the official Fenix Installer .exe from your Fenix account.")
+    elif manager:
+        app = manager_path(prefix)
+    else:
+        app = regular(prefix / PROGRAM / "Fenix.exe")
+    fd = os.open(path, os.O_CREAT | os.O_APPEND | os.O_WRONLY | os.O_NOFOLLOW, 0o600)
+    try:
+        wine = Wine(prefix, runner, fd)
+        ensure_ui_fonts(prefix, runner, wine)
+        # Wine's fallback notification area otherwise becomes a separate
+        # blank window on desktops without an XEmbed tray. Scope to this
+        # runtime; the main Fenix UI remains available through Flightdeck.
+        wine.reg(r"HKCU\Software\Wine\Explorer", "ShowSystray", "0", "REG_DWORD")
+        progress("Fenix is open. Complete its setup or sign-in, then close the application to continue.")
+        args = [str(wine_binary(runner)), str(app)]
+        options = dict(cwd=app.parent, env=wine_env(prefix, runner), stdin=subprocess.DEVNULL,
+                       stdout=fd, stderr=subprocess.STDOUT)
+        if wait is None:
+            subprocess.run(args, **options, check=True)
+        else:
+            # A launcher may offer cancellation while retaining this exact
+            # runtime lease through companion cleanup. The default CLI/GUI
+            # still simply waits for the official application to exit.
+            child = subprocess.Popen(args, **options)
+            try:
+                result = wait(child)
+            except BaseException:
+                if child.poll() is None:
+                    child.terminate()
+                    try:
+                        child.wait(timeout=3)
+                    except subprocess.TimeoutExpired:
+                        child.kill()
+                        child.wait()
+                raise
+            if result:
+                raise subprocess.CalledProcessError(result, args)
+    finally:
+        os.close(fd)
 
 
 def snapshot(runtime):

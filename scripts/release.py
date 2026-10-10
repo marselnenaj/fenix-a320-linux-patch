@@ -27,7 +27,7 @@ def main():
                 if digest(ROOT / group / name) != expected:
                     raise ValueError("Source checksum mismatch: " + name)
         source_archives.update(entry["sources"])
-    allowed = [ROOT / name for name in ("README.md", "LICENSE", "THIRD_PARTY.md", "BUILDING.md", "bundle.json", "install.sh", ".gitignore")]
+    allowed = [ROOT / name for name in ("README.md", "LICENSE", "THIRD_PARTY.md", "BUILDING.md", "bundle.json", "install.sh", "Fenix A320 Linux Patch.desktop", ".gitignore")]
     for folder in ("fenix_patch", "patches", "licenses", "scripts", "tests", "docs", "native", ".github"):
         for file in sorted((ROOT / folder).rglob("*")):
             if "__pycache__" in file.parts or file.suffix == ".pyc": continue

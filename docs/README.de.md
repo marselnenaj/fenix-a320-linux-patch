@@ -1,9 +1,36 @@
 # Fenix A320 unter Linux
 
 Dieses Community-Paket richtet die getesteten Fenix-Korrekturen für
-**MSFS 2024 in Flightdeck** ein. Unterstützt wird ausschließlich der in
-`bundle.json` festgelegte Xodus-Wine-Runner. Andere Wine-/Proton-Versionen und
-MSFS 2020 werden vor Änderungen abgewiesen.
+**MSFS 2024 in Flightdeck** und, als ungetestete erste Fassung, für die
+**Steam-Versionen von MSFS 2020 und 2024** ein. Unterstützt werden ausschließlich
+die in `bundle.json` festgelegten Wine-/Proton-Stände; andere werden vor
+Änderungen abgewiesen.
+
+## Steam (MSFS 2020 / 2024)
+
+Der Installer funktioniert auch ohne Flightdeck mit den Steam-Versionen. Dieser
+Weg wurde noch nicht mit einem echten Steam-Simulator geprüft; MSFS 2020 mit
+Fenix ist ungetestet.
+
+1. Den Simulator einmal in Steam starten und wieder schließen.
+2. `./install.sh` starten (oder *Fenix A320 Linux Patch* doppelklicken). Im
+   Browser öffnet sich eine geführte Einrichtung, die nur lokal läuft.
+3. Den fünf Schritten folgen: Patch einrichten, Steam auf **Proton Fenix A320**
+   umstellen, offiziellen Fenix-Installer ausführen, anmelden, Anzeigen
+   einstellen. Erledigte Schritte sind abgehakt; die Einrichtung lässt sich
+   schließen und später fortsetzen.
+
+Der Installer legt das eigene Proton an, weil Steam Proton Experimental laufend
+aktualisiert und die Korrekturen zu genau einem Wine-Stand gehören. Andere
+Proton-Versionen und Spiele bleiben unverändert. Bei geschlossenem Steam trägt
+er dieses Proton selbst für den Simulator ein; sonst unter *Eigenschaften →
+Kompatibilität* erzwingen. `./install.sh --text` führt dieselben Schritte im
+Terminal aus.
+
+Der Ordner `Packages` im Profil wird verschoben statt kopiert. Einzelheiten und
+Grenzen: [steam.md](steam.md).
+
+## Flightdeck (MSFS 2024)
 
 1. MSFS einmal mit Flightdeck starten und danach Simulator und Fenix schließen.
 2. Das Linux-Installer-ZIP aus den GitHub-Releases entpacken und `./install.sh`
@@ -17,7 +44,7 @@ MSFS 2020 werden vor Änderungen abgewiesen.
 6. CPU-Anzeigen und Legacy-Readouts anwenden. Danach MSFS über Flightdeck starten.
 
 Du benötigst die gekaufte Fenix-Lizenz, Python 3.10+, glibc 2.38+, GNU `cp`
-und für das eigenständige Fenster Python Tk. Keine Root-Rechte nötig.
+und einen Webbrowser für die geführte Einrichtung. Keine Root-Rechte nötig.
 
 Getestet: Fenix 2.4.0.4720, MSFS 2024 1.8.16.0, Xodus Wine 11.0 und Hyprland.
 Die Cockpitanzeigen wurden im laufenden Flugzeug geprüft. Ein vollständiger
