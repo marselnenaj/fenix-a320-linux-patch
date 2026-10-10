@@ -33,8 +33,14 @@ GAMES = {
 }
 STATE = "fenix-a320-linux-patch"
 TOOL_MARKER = "fenix-a320-tool.json"
-# Exact public builds that an overlay in bundle.json was compiled for.
+# Exact public builds that an overlay in bundle.json was compiled for, in order
+# of preference: the Wine 11 generation that Proton Experimental currently uses,
+# then the earlier Wine 10 build.
 PROTON_DOWNLOADS = {
+    "cachyos-11": (
+        "https://github.com/CachyOS/proton-cachyos/releases/download/cachyos-11.0-20261005-slr/proton-cachyos-11.0-20261005-slr-x86_64.tar.xz",
+        "096bfe73b506d6565b04ecc45214197a4091818f16ed91f5324b4d2082d0a263",
+        "proton-cachyos-11.0-20261005-slr-x86_64"),
     "cachyos-10": (
         "https://github.com/CachyOS/proton-cachyos/releases/download/cachyos-10.0-sunset-slr/proton-cachyos-10.0-sunset-slr-x86_64.tar.xz",
         "d6e1baa66937ed58e854b2013c0ef3b3f1fbc51d7be09e34a5ada3442ea9452d",
@@ -256,19 +262,25 @@ def source_proton(item, explicit, progress, download_into):
         if variant is None:
             raise PatchError("This Proton build has no matching Fenix overlay. Supported: " + supported())
         return path, variant
+    installed = {}
     for path in installed_protons(item):
-        variant = pristine_variant(path)
-        if variant is not None:
-            progress("Using the installed %s as the base for the Fenix Proton." % path.name)
-            return path, variant
+        installed.setdefault(pristine_variant(path), path)
+    installed.pop(None, None)
+    available = core.manifest().get("variants", {})
     for variant, (url, sha, folder) in PROTON_DOWNLOADS.items():
-        if variant not in core.manifest().get("variants", {}):
+        if variant not in available:
             continue
-        progress("Downloading the pinned Proton build %s (about 330 MB) …" % folder)
+        if variant in installed:
+            progress("Using the installed %s as the base for the Fenix Proton." % installed[variant].name)
+            return installed[variant], variant
+        progress("Downloading the pinned Proton build %s (about 350 MB) …" % folder)
         archive = core.download(url, item.state / "downloads" / url.rsplit("/", 1)[1], sha, max_size=1024 ** 3)
         progress("Extracting Proton …")
         path = extract_proton(archive, download_into, folder)
         core.verify_runner(path, core.manifest(variant))
+        return path, variant
+    for variant, path in installed.items():
+        progress("Using the installed %s as the base for the Fenix Proton." % path.name)
         return path, variant
     raise PatchError("No supported Proton build is available. Supported: " + supported())
 
@@ -374,8 +386,16 @@ def remove_shared_mono(wine):
                 path.unlink()
 
 
+def require_display():
+    # Microsoft's .NET setup creates windows even when silent; under Wine 11
+    # it waits forever when there is no display to create them on.
+    if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        raise PatchError("Run the installation inside your desktop session: Microsoft's .NET setup does not finish without a display.")
+
+
 def install(item, bundle, progress=lambda _: None, proton=None):
     core.host_check()
+    require_display()
     bundle = core.verify_bundle(bundle)
     version = core.manifest()["version"]
     with locked(item):

@@ -17,10 +17,13 @@ updates that folder. Only the simulator uses it; other games keep whatever
 Proton you play them with, and it does not matter which Proton the simulator
 used before.
 
-The base is an unmodified build that matches an overlay in `bundle.json`:
-an installed exact match is used first, otherwise CachyOS Proton
-`cachyos-10.0-sunset-slr` (about 330 MB) is downloaded from its GitHub release
-and verified by checksum. `--proton /path` selects a specific supported build.
+The base is an unmodified build that matches an overlay in `bundle.json`. The
+default is CachyOS Proton `cachyos-11.0-20261005-slr`: the Wine 11 generation
+that Proton Experimental currently uses, published as a fixed download. It is
+used when installed, otherwise downloaded from its GitHub release (about
+350 MB) and verified by checksum. Valve publishes no fixed downloads of its
+own Proton builds. `--proton /path` selects another supported build, for
+example the earlier `cachyos-10.0-sunset-slr`.
 
 ## Install
 
@@ -73,6 +76,12 @@ also returns the simulator's earlier compatibility setting; otherwise choose
 another Proton for the simulator in Steam afterwards.
 
 ## Limits of this preview
+
+* The installation has to run inside a desktop session. Without a display,
+  Microsoft's .NET setup does not finish under Wine 11; the installer refuses
+  to start instead.
+* Without the kernel's `ntsync` device, Wine 11 uses server-side
+  synchronization. The overlay's checks ran in that mode only.
 
 * The automatic MCDU refresh after a display restart is started by Flightdeck's
   launcher and is not part of the Steam path. The fallback window guard for the

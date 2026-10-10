@@ -1,4 +1,15 @@
-# Unreleased
+# 0.1.0-preview.5 — 10 October 2026
+
+One release for Steam and Flightdeck. The Flightdeck overlay (Xodus Wine) and
+the two earlier Proton overlays are byte-identical to preview.4; verified
+preview.4 installations are recognised and updated without reinstalling Fenix.
+
+* New overlay for CachyOS Proton `cachyos-11.0-20261005-slr` (Wine 11), the
+  default base of the Steam installation. Loader, memory, audio, cursor,
+  helper-window and Direct2D regression probes pass on the unmodified build:
+  3,564 geometry reference cases, 800 concurrent metric checks and 768 stroke
+  comparisons with zero differing pixels; 32-bit clients keep working with the
+  rebuilt server.
 
 * Standalone installation for the Steam editions of MSFS 2020 and 2024
   (`./install.sh install --steam msfs2024`). The installer creates a separate
@@ -17,9 +28,9 @@
 * Flightdeck runtimes keep working with the same commands.
 
 Verified in a reproduced Steam library whose profile was created by Proton
-Experimental: pinned Proton download, .NET Framework 4.8 (32- and 64-bit CLR
-through the tool's launcher), geometry dependency, overlay, Proton's own
-profile refresh, restore and repeat installation. **Not yet run with a real
+Experimental, with both CachyOS bases: pinned Proton download, .NET Framework
+4.8 (32- and 64-bit CLR through the tool's launcher), geometry dependency,
+overlay, Proton's own profile refresh, restore and repeat installation. **Not yet run with a real
 Steam simulator or Fenix on Steam**; MSFS 2020 with Fenix is untested.
 
 # 0.1.0-preview.4 — 3 October 2026

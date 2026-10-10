@@ -11,7 +11,10 @@
   `sources/experimental-11-wine.tar.gz`.
 * CachyOS Wine: https://github.com/CachyOS/wine-cachyos at
   `603c2335ab4b26e57512ce19aca7c8ae95485daf`; unchanged source archive
-  `sources/cachyos-10-wine.tar.gz`. Both retain Wine’s LGPL-2.1-or-later
+  `sources/cachyos-10-wine.tar.gz`.
+* CachyOS Wine 11: the same repository at
+  `2ce6b44caa66a56ec99c7826ae564c088abc1b9f`; unchanged source archive
+  `sources/cachyos-11-wine.tar.gz`. All three retain Wine’s LGPL-2.1-or-later
   licensing and original per-file notices.
 * All modifications to these sources are in `patches/`, in manifest order.
   The patches are LGPL-2.1-or-later. See `licenses/LGPL-2.1.txt`.
@@ -25,6 +28,9 @@ The complete sources are in the same binary ZIP and in a separate corresponding
 source archive in each release. Build and relinking instructions are in BUILDING.md.
 The runner itself, its fonts, DXVK and vkd3d binaries are supplied by the user's
 Flightdeck or Proton installation and are not redistributed by this project.
+For Steam, the installer can download the unmodified CachyOS Proton build from
+its [GitHub release](https://github.com/CachyOS/proton-cachyos/releases); the
+URL and SHA-256 pin are in `fenix_patch/steam.py`.
 
 The Direct2D geometry provider is downloaded separately from Microsoft's
 [Platform Update for Windows 7 (KB2670838)](https://www.microsoft.com/en-us/download/details.aspx?id=36805).

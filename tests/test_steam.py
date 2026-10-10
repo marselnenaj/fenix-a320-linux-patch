@@ -60,7 +60,8 @@ class SteamTests(unittest.TestCase):
                         patch.object(core, "Wine"), patch.object(core, "prepare_framework"),
                         patch.object(core, "graphics_and_fonts"), patch.object(core, "prepare_geometry"),
                         patch.object(steam, "proton_setup", side_effect=proton_setup),
-                        patch.object(steam, "PROTON_DOWNLOADS", {}), patch.object(steam, "steam_running", return_value=False)]
+                        patch.object(steam, "PROTON_DOWNLOADS", {}), patch.object(steam, "steam_running", return_value=False),
+                        patch.object(steam, "require_display")]
         for item in self.patches: item.start()
 
     def tearDown(self):
@@ -274,6 +275,37 @@ class SteamTests(unittest.TestCase):
         view = guide.overview(target)
         self.assertTrue(view["broken"] and view["current"] is None and view["can_restore"])
         self.assertIn("Restore", view["message"])
+
+    def test_installation_needs_a_display(self):
+        self.patches[-1].stop()
+        try:
+            with patch.dict(os.environ, {}, clear=False) as env:
+                env.pop("DISPLAY", None); env.pop("WAYLAND_DISPLAY", None)
+                with self.assertRaisesRegex(core.PatchError, "desktop session"):
+                    steam.install(self.item, self.bundle)
+            self.assertFalse(self.item.marker.exists())
+        finally:
+            self.patches[-1].start()
+
+    def test_preferred_proton_wins_over_another_installed_match(self):
+        self.put(self.proton / "version", "other version")
+        preferred = self.root / "compatibilitytools.d/a-newer-proton"
+        for path in self.proton.rglob("*"):
+            if path.is_file():
+                self.put(preferred / path.relative_to(self.proton), path.read_text() + (" 11" if path.name == "wine" else ""))
+        self.put(preferred / "version", "preferred version")
+        entry = self.lock["variants"]["fixture"]
+        self.lock["variants"]["older"] = {**entry, "runner_version": "1 other version"}
+        self.lock["variants"]["newer"] = {**entry, "runner_version": "1 preferred version", "runner_files": {
+            **entry["runner_files"], "files/bin/wine": core.digest(preferred / "files/bin/wine")}}
+        del self.lock["variants"]["fixture"]
+        self.put(self.bundle / "bundle.json", json.dumps(self.lock))
+        for name in entry["files"]:
+            for variant in ("older", "newer"):
+                self.put(self.bundle / "payload/variants" / variant / name, "new " + name)
+        with patch.object(steam, "PROTON_DOWNLOADS", {"newer": ("https://invalid.example/x.tar.xz", "0", "x")}):
+            steam.install(self.item, self.bundle)
+        self.assertEqual(core.read_json(self.item.marker)["variant"], "newer")
 
     def test_symlinked_profile_is_rejected(self):
         moved = self.base / "elsewhere"

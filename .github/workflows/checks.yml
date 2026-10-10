@@ -19,3 +19,4 @@ jobs:
       - run: python scripts/build.py --prepare-only
       - run: python scripts/build-proton.py experimental-11 --build-dir build/experimental-source --prepare-only
       - run: python scripts/build-proton.py cachyos-10 --build-dir build/cachyos-source --prepare-only
+      - run: python scripts/build-proton.py cachyos-11 --build-dir build/cachyos-11-source --prepare-only

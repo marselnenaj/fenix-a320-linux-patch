@@ -10,10 +10,11 @@ This packages the Wine fixes tested with Fenix **2.4.0.4720**, MSFS 2024
 FCU and radio display rendering were checked in a running cockpit. A complete
 flight and other Fenix versions have not been independently validated.
 
-**Preview.4** adds matched overlays for Proton Experimental 11.0 (20260924) and
-CachyOS Proton 10.0 sunset. Their loader, memory, audio, cursor, helper-window and
-Direct2D regression probes pass; a complete Fenix/MSFS flight on these runners
-has not been validated. Route geometry and automatic MCDU display refresh remain
+**Preview.5** adds the standalone Steam installation with a guided setup and an
+overlay for CachyOS Proton 11.0 (20261005), next to the overlays for Proton
+Experimental 11.0 (20260924) and CachyOS Proton 10.0 sunset. Their loader, memory,
+audio, cursor, helper-window and Direct2D regression probes pass; a complete
+Fenix/MSFS flight on these runners has not been validated. Route geometry and automatic MCDU display refresh remain
 available. See
 [display restart handling](docs/mcdu-restart.md).
 
@@ -91,7 +92,7 @@ geometry dependency, copies the existing runner's fonts and graphics dependencie
 and installs the compatibility overlay after the staging Wine session exits. It retains the
 original runner, profile and launch scripts. An interrupted installation has a
 recovery journal. Repeating an already completed installation verifies its files.
-Running `install` from preview.4 also updates verified preview.1–preview.3 installations,
+Running `install` from preview.5 also updates verified preview.1–preview.4 installations,
 retaining installed aircraft, settings and the original restore point. Flightdeck
 performs that update before opening Fenix applications when needed.
 
