@@ -164,7 +164,11 @@ class SteamTests(unittest.TestCase):
                 with patch.object(os, "rename", side_effect=rename), self.assertRaises(OSError):
                     steam.install(self.item, self.bundle)
                 self.assertEqual(core.read_json(self.item.marker)["state"], "committing")
-                steam.restore(self.item)
+                # Found by its patch state even while no profile is in place.
+                found = steam.target("msfs2024", str(self.root))
+                self.assertEqual(found.compat, self.item.compat.resolve())
+                self.assertEqual(steam.snapshot(found)["state"], "committing")
+                steam.restore(found)
                 self.assertEqual((self.item.compat / "version").read_text(), "11.0-100")
                 self.assertEqual((self.prefix / "system.reg").read_text(), "original registry")
                 self.assertEqual((self.settings / "Packages/Community/addon/layout.json").read_text(), "large simulator content")

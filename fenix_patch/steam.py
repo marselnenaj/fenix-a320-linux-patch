@@ -124,14 +124,16 @@ def libraries(root):
 
 
 def targets(steam_root=None):
-    """Installed Steam simulators whose Windows profile exists."""
+    """Installed Steam simulators whose Windows profile or patch state exists."""
     found = []
     for root in steam_roots(steam_root):
         for library in libraries(root):
             for game, info in GAMES.items():
                 target = Target(game, root, library)
+                # An interrupted exchange leaves no profile in place for a
+                # moment; its patch state must still be found for Restore.
                 if (library / "steamapps" / ("appmanifest_%s.acf" % info["appid"])).is_file() and \
-                        (target.prefix / "system.reg").is_file() and \
+                        ((target.prefix / "system.reg").is_file() or target.marker.is_file()) and \
                         not any(item.compat == target.compat for item in found):
                     found.append(target)
     return found
@@ -146,7 +148,7 @@ def target(game, steam_root=None):
                          "Windows profile, then close it." % GAMES[game]["title"])
     if len(found) > 1:
         raise PatchError("%s exists in several Steam installations. Choose one with --steam-root." % GAMES[game]["title"])
-    return checked(found[0])
+    return found[0] if found[0].marker.is_file() else checked(found[0])
 
 
 def checked(item, *, recovery=False):
