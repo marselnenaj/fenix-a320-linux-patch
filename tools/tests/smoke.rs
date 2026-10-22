@@ -218,13 +218,24 @@ fn expected_calls(work: &str, payload: &str, original: &str, container: bool) ->
             " [-lcrypt32] [-ladvapi32]",
             &late,
         ),
+        ("cwd-contract-probe", "cwd-contract-probe", "", &late),
     ] {
+        let libraries = if source == "cwd-contract-probe" {
+            format!(" [-municode] [-DCWD_PROBE_PREFIX=L\"{at}/prefix\"]")
+        } else {
+            libraries.to_string()
+        };
         expected.extend([
             format!(
                 "{gcc} [{at}/{program}.exe] [<LAB>/repo/tests/{source}.c]{libraries} cwd=<CWD> DISPLAY=<X>"
             ),
             format!("wine [{at}/{program}.exe] cwd={at} {env}"),
         ]);
+        if source == "cwd-contract-probe" {
+            expected.push(format!(
+                "wine [{at}/{program}.exe] [--negative] cwd={at} {env}"
+            ));
+        }
     }
     expected.extend([
         format!(
@@ -331,8 +342,12 @@ fn probe_lines() -> String {
         "pbkdf2-probe",
         "ncrypt-ecdh-probe",
         "sip-pe-probe",
+        "cwd-contract-probe",
     ] {
         lines += &format!("{name}:\n{name}.exe says hello\n{name}.exe notes something\n\n");
+        if name == "cwd-contract-probe" {
+            lines += "cwd-contract-negative:\ncwd-contract-probe.exe says hello\ncwd-contract-probe.exe notes something\n\n";
+        }
     }
     lines
 }
@@ -390,6 +405,21 @@ fn a_whole_smoke_test_runs_every_probe_and_stops_wine() {
     let work = base.join("work");
     assert!(work.join("prefix/drive_d").is_dir());
     assert!(work.join("prefix/drive_c").is_dir());
+    for relative in ["drive_c", "drive_d", "dosdevices/unc/cwd-own-test/share"] {
+        assert_eq!(
+            read(
+                &work
+                    .join("prefix")
+                    .join(relative)
+                    .join("probe/own-control.txt")
+            ),
+            "synthetic cwd control\n"
+        );
+    }
+    assert_eq!(
+        digest(&work.join("prefix/drive_c/probe/cwd-contract-probe.exe")),
+        digest(&work.join("cwd-contract-probe.exe"))
+    );
     for (drive, target) in [("c:", "../drive_c"), ("d:", "../drive_d"), ("z:", "/")] {
         assert_eq!(
             std::fs::read_link(work.join("prefix/dosdevices").join(drive)).unwrap(),

@@ -433,6 +433,7 @@ impl Stage<'_, '_> {
             "pbkdf2-probe",
             "ncrypt-ecdh-probe",
             "sip-pe-probe",
+            "cwd-contract-probe",
         ] {
             let output = work.join(if name == "loader-case-probe" {
                 "Fenix.exe".to_string()
@@ -456,13 +457,34 @@ impl Stage<'_, '_> {
                 root.join("tests").join(format!("{name}.c"))
             ]
             .to_vec();
+            if name == "cwd-contract-probe" {
+                let path = prefix
+                    .to_string_lossy()
+                    .replace('\\', "\\\\")
+                    .replace('"', "\\\"");
+                compile.extend(argv![
+                    "-municode",
+                    format!("-DCWD_PROBE_PREFIX=L\"{path}\"")
+                ]);
+            }
             compile.extend(libraries.iter().map(OsString::from));
             self.host(compile)?;
+            if name == "cwd-contract-probe" {
+                fsx::copy2(
+                    &output,
+                    &prefix.join("drive_c/probe/cwd-contract-probe.exe"),
+                )?;
+            }
             if name == "writecopy-probe" {
                 env.set("WINE_TRACK_WRITECOPY", "1");
             }
             let text = self.logged(name, &argv![&output], env)?;
             ctx.print(&format!("{name}:\n{text}"))?;
+            if name == "cwd-contract-probe" {
+                let text =
+                    self.logged("cwd-contract-negative", &argv![&output, "--negative"], env)?;
+                ctx.print(&format!("cwd-contract-negative:\n{text}"))?;
+            }
             if name == "loader-case-probe"
                 && !(text.contains("KERNEL32.DLL") && text.contains("KERNELBASE.dll"))
             {
@@ -601,6 +623,23 @@ pub fn run(ctx: &Context<'_>, options: &Options) -> Result<()> {
     // alongside the additional D scratch root before wineboot initializes it.
     for (drive, target) in [("c:", "../drive_c"), ("d:", "../drive_d"), ("z:", "/")] {
         fsx::symlink(Path::new(target), &prefix.join("dosdevices").join(drive))?;
+    }
+    // Only this new prefix is used for cwd identity, inheritance and capacity controls.
+    for relative in ["drive_c", "drive_d", "dosdevices/unc/cwd-own-test/share"] {
+        let scratch = prefix.join(relative);
+        fsx::mkdir_parents(&scratch.join("probe"), 0o777)?;
+        util::write_text(
+            &scratch.join("probe/own-control.txt"),
+            "synthetic cwd control\n",
+        )?;
+        util::write_text(
+            &scratch.join("cwd-root-control.txt"),
+            "synthetic root control\n",
+        )?;
+    }
+    for length in 258..=260 {
+        let tail = "a".repeat(length - "C:\\probe\\boundary\\".len());
+        fsx::mkdir_parents(&prefix.join("drive_c/probe/boundary").join(tail), 0o777)?;
     }
     let mut env = core::wine_env(system, &prefix, &runner);
     env.set("WINEDLLOVERRIDES", "winemenubuilder.exe=d;mscoree,mshtml=");

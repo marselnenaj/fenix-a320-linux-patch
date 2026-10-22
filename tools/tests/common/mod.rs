@@ -627,7 +627,7 @@ const INTEGRATION: [&str; 6] = [
     "fenix-display-refresh.py",
 ];
 
-const PROBES: [&str; 16] = [
+const PROBES: [&str; 17] = [
     "loader-case-probe.c",
     "writecopy-probe.c",
     "iocp-smoke.c",
@@ -641,6 +641,7 @@ const PROBES: [&str; 16] = [
     "ncrypt-ecdh-vectors.h",
     "sip-pe-probe.c",
     "sip-pe-fixture.h",
+    "cwd-contract-probe.c",
     "window-guard-probe.c",
     "path-metrics-probe.cpp",
     "stroke-joins-probe.cpp",

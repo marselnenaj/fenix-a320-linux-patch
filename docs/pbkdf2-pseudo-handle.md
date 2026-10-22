@@ -46,7 +46,7 @@ The four modules were compiled from private copies of their matching pinned
 sources. Complete archive and ordered `--fuzz=0` patch replay reproduces both
 affected source and Wine regression inputs. Existing payload modules,
 including storage and volume-path fixes, and previous-release snapshots are
-unchanged. The normal build adds BCrypt as its thirteenth Wine target.
+unchanged. BCrypt is included in the normal Wine build targets.
 
 Separate Xodus tests with own-code .NET 8 and .NET 10 programs also pass
 their five reference vectors; their original-runner controls reproduce the

@@ -7,8 +7,10 @@ a stub. It is not a complete native SIP implementation.
 In the isolated Fenix 3.0.0.7454 investigation, replacing that stub allowed
 the launcher to stay running and the three child images to pass preflight.
 Those live observations used earlier diagnostic modules. The final V4
-modules have the own-code checks below and still need a live integrated
-retry. They do not establish working cockpit displays or a complete flight.
+modules have the own-code checks below. A final combined retry reached
+System boot, then hit a Wine memory-view assertion under separate
+investigation. Stable operation, working cockpit displays and a complete
+flight remain unverified.
 
 ## Supported input
 

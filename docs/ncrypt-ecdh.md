@@ -4,9 +4,11 @@ This is a **local, unreleased** compatibility change as of 23 October 2026.
 The pinned Wine provider returns `NTE_NOT_SUPPORTED` for unnamed
 `ECDH_P256` creation. An isolated Fenix 3.0.0.7454 retry with the diagnostic
 Xodus modules completed Systems link setup in 8,894 ms, kept FenixSystem
-running and spawned its gateway. A separate application-folder path failure
-remains under investigation. The final integrated modules still need a live
-retry; working cockpit displays and a complete flight are unverified.
+running and spawned its gateway. The separate application-folder defect is
+addressed by the [current-directory change](current-directory.md). A final
+combined retry reached System boot, then hit a Wine memory-view assertion
+under separate investigation. Stable operation, working cockpit displays
+and a complete flight are unverified.
 
 ## Supported scope
 

@@ -165,6 +165,12 @@ unsupported layouts and output-buffer canaries. It creates its own files
 and registers the PE provider only in the isolated smoke prefix. See
 [bounded PE indirect data](docs/pe-indirect-data.md) for the supported layout
 and the still-unmeasured native ASN.1/required-size representation.
+The current-directory probe uses explicitly owned C/D/UNC fixtures, checks
+194 parent/128 inherited-child operations and runs separate negative cases.
+It verifies that opened GLOBALROOT directories store a rooted DOS/UNC cwd
+and that a rejected over-capacity path preserves the old state. See
+[current-directory conversion](docs/current-directory.md) for source ports,
+boundary controls and the remaining application-runtime limitation.
 The Direct2D lifetime probe checks live heap growth after 300,000 geometries
 on both normal and error paths, and 20,000 deterministic near-degenerate paths
 with a per-case watchdog. See [lifetime and termination](docs/d2d-lifetime.md).
