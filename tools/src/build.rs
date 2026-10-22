@@ -16,13 +16,17 @@ use std::{
 };
 
 /// What `make` builds, and where each module belongs in a runner.
-pub const TARGETS: [(&str, &str); 12] = [
+pub const TARGETS: [(&str, &str); 13] = [
     (
         "dlls/ntdll/x86_64-windows/ntdll.dll",
         "files/lib/wine/x86_64-windows/ntdll.dll",
     ),
     ("dlls/ntdll/ntdll.so", "files/lib/wine/x86_64-unix/ntdll.so"),
     ("server/wineserver", "files/bin/wineserver"),
+    (
+        "dlls/bcrypt/x86_64-windows/bcrypt.dll",
+        "files/lib/wine/x86_64-windows/bcrypt.dll",
+    ),
     (
         "dlls/crypt32/x86_64-windows/crypt32.dll",
         "files/lib/wine/x86_64-windows/crypt32.dll",

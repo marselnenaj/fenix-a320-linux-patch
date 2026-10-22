@@ -19,6 +19,7 @@ use std::{
 };
 
 const MODULES: &str = "[dlls/ntdll/x86_64-windows/ntdll.dll] [dlls/ntdll/ntdll.so] [server/wineserver] \
+[dlls/bcrypt/x86_64-windows/bcrypt.dll] \
 [dlls/crypt32/x86_64-windows/crypt32.dll] [dlls/mmdevapi/x86_64-windows/mmdevapi.dll] \
 [dlls/kernelbase/x86_64-windows/kernelbase.dll] \
 [dlls/windows.storage.applicationdata/x86_64-windows/windows.storage.applicationdata.dll] \
@@ -26,10 +27,11 @@ const MODULES: &str = "[dlls/ntdll/x86_64-windows/ntdll.dll] [dlls/ntdll/ntdll.s
 [dlls/dwrite/x86_64-windows/dwrite.dll] [dlls/dwrite/dwrite.so] [dlls/win32u/win32u.so] \
 [dlls/winex11.drv/winex11.so]";
 
-const INSTALLED: [&str; 12] = [
+const INSTALLED: [&str; 13] = [
     "files/lib/wine/x86_64-windows/ntdll.dll",
     "files/lib/wine/x86_64-unix/ntdll.so",
     "files/bin/wineserver",
+    "files/lib/wine/x86_64-windows/bcrypt.dll",
     "files/lib/wine/x86_64-windows/crypt32.dll",
     "files/lib/wine/x86_64-windows/mmdevapi.dll",
     "files/lib/wine/x86_64-windows/kernelbase.dll",
@@ -781,7 +783,7 @@ fn gpu_builds_record_the_gdi_abi_partners_and_only_same_version_dxgi() {
         } else {
             &after
         };
-        assert_eq!(entry["files"].as_object().unwrap().len(), 16);
+        assert_eq!(entry["files"].as_object().unwrap().len(), 17);
         for (_, relative) in GPU_TARGETS {
             assert_eq!(entry["files"][relative], digest(&payload.join(relative)));
         }
@@ -928,7 +930,7 @@ fn a_legacy_proton_build_does_not_inherit_the_base_dxvk_capability() {
     assert_eq!(fixture.calls(), proton_calls("legacy", "1"));
     let lock = fixture.tree.lock();
     let entry = &lock["variants"][VARIANT];
-    assert_eq!(entry["files"].as_object().unwrap().len(), 12);
+    assert_eq!(entry["files"].as_object().unwrap().len(), 13);
     assert!(entry.get("dxvk").is_none());
     assert!(!fixture.tree.root.join("legacy/dxvk-objects").exists());
 }

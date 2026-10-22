@@ -85,7 +85,7 @@ fn stem() -> String {
 }
 
 /// The source files of the synthetic repository, as they are named in a release.
-const SOURCE: [&str; 46] = [
+const SOURCE: [&str; 47] = [
     ".github/workflows/ci.yml",
     ".gitignore",
     "BUILDING.md",
@@ -119,6 +119,7 @@ const SOURCE: [&str; 46] = [
     "tests/iocp-smoke.c",
     "tests/loader-case-probe.c",
     "tests/path-metrics-probe.cpp",
+    "tests/pbkdf2-probe.c",
     "tests/shared-cursor-probe.c",
     "tests/stroke-joins-probe.cpp",
     "tests/test_display_refresh.py",

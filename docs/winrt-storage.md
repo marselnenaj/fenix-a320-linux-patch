@@ -35,8 +35,10 @@ With the candidate Xodus module, the real installer completed four update
 plans for aircraft **3.0.0.7454**, compared with none using the original module.
 A separate .NET 8 probe using the shipped SQLite dependency also completed
 `SELECT sqlite_version()` with SQLite **3.46.1**. These observations establish
-database initialization and update planning. Aircraft installation, activation,
-cockpit rendering and full-flight behavior need separate validation.
+database initialization and update planning. The official installer later
+completed installation of aircraft **3.0.0.7454** on the tested Xodus profile.
+Aircraft startup needed additional compatibility fixes; cockpit rendering
+and full-flight behavior remain unverified.
 
 The previously added .NET 10 prerequisite support remains unchanged. Installer
 1.0.359's .NET 8 storage failure is a separate compatibility problem.

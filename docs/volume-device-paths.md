@@ -63,7 +63,9 @@ passed and CDU/Display processes started. Other compatibility candidates
 were also present in that investigation; this is one resolved filesystem
 blocker, not a standalone v3 compatibility result.
 
-The integrated form restricts separator handling to the device branch; its
-native probes pass, while a final real-application retry with the integrated
-payload set remains necessary. Cockpit rendering and full-flight behavior
-are not established. No release version is assigned to this local candidate.
+The integrated form restricts separator handling to the device branch. Its
+native probes and a subsequent real Xodus retry also pass all three image
+preflight checks. With the separate BCrypt candidate, authorization
+preparation and System process launch completed. Later initialization still
+requires compatibility work. Cockpit rendering and full-flight behavior are
+not established. No release version is assigned to this local candidate.

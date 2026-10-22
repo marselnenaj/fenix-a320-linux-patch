@@ -204,6 +204,7 @@ fn expected_calls(work: &str, payload: &str, original: &str, container: bool) ->
             "",
             &late,
         ),
+        ("pbkdf2-probe", "pbkdf2-probe", " [-lbcrypt]", &late),
     ] {
         expected.extend([
             format!(
@@ -314,6 +315,7 @@ fn probe_lines() -> String {
         "applicationdata-unpackaged-probe",
         "volume-roundtrip-probe",
         "volume-separators-probe",
+        "pbkdf2-probe",
     ] {
         lines += &format!("{name}:\n{name}.exe says hello\n{name}.exe notes something\n\n");
     }
