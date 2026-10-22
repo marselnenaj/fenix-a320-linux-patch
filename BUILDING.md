@@ -43,8 +43,8 @@ xgameruntime submodule, generates spec/Vulkan headers from the included XML,
 and configures Wine with `--enable-win64 --disable-tests --enable-silent-rules
 --without-ffmpeg --without-unwind`. Without the last option `configure` links
 `ntdll.so` against the build host's libunwind, which the pinned runners and the
-Steam Linux Runtime containers do not have. It builds the fifteen targets listed
-in `tools/src/build.rs`, including the WinRT storage, BCrypt and NCrypt modules, and
+Steam Linux Runtime containers do not have. It builds the sixteen targets listed
+in `tools/src/build.rs`, including WinRT storage, BCrypt, NCrypt and Wintrust, and
 the independent MIT window guard, geometry setup and MCDU refresh helpers. Debug sections are stripped from release files.
 Compiler prefix maps replace local checkout paths in both Unix and Windows
 modules with `/usr/src/fenix-a320-linux-patch`.
@@ -123,7 +123,7 @@ and keep the existing 32-bit clients. They do not import Xodus's mapped-image
 protocol extension: Flightdeck provides the portable Store loader. The selected
 runner's graphics DLLs are preserved except the same-revision DXGI in overlays
 with their own `dxvk` block. An overlay without that block keeps the original
-fifteen Wine targets and does not inherit the base overlay's DXVK build. CachyOS retains its existing
+sixteen Wine targets and does not inherit the base overlay's DXVK build. CachyOS retains its existing
 arc/group rendering; exact path streaming avoids its rotated-arc simplification
 error when computing metrics. Its remote-thread activation-context fix belongs
 in ntdll, while Experimental's implementation is in kernelbase.
@@ -159,6 +159,12 @@ state, owning provider handles, output sizing/truncation and 1,000 disposal
 cycles. See [ephemeral NCrypt ECDH compatibility](docs/ncrypt-ecdh.md) for the
 bounded software-provider and KDF scope. The matching BCrypt Unix backend
 validates imported P256 parameters; the PBKDF2 Windows module stays unchanged.
+The SIP probe uses a public Wine PE fixture with a known Windows SHA1 digest,
+independent SHA256/PE32+ references, four hash mutations, 22 malformed or
+unsupported layouts and output-buffer canaries. It creates its own files
+and registers the PE provider only in the isolated smoke prefix. See
+[bounded PE indirect data](docs/pe-indirect-data.md) for the supported layout
+and the still-unmeasured native ASN.1/required-size representation.
 The Direct2D lifetime probe checks live heap growth after 300,000 geometries
 on both normal and error paths, and 20,000 deterministic near-degenerate paths
 with a per-case watchdog. See [lifetime and termination](docs/d2d-lifetime.md).

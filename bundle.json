@@ -29,7 +29,8 @@
     "files/lib/wine/x86_64-windows/windows.storage.applicationdata.dll": "34aa43d849b86da248fd2692e31805ac872d27c22813fe80f045e6cbcde408fc",
     "files/lib/wine/x86_64-windows/bcrypt.dll": "b9f1bf226a5babc92c0c05fd1769caae9cf8743e59a10215c78c3dc045e1dafb",
     "files/lib/wine/x86_64-windows/ncrypt.dll": "2aee2808af4394be82879d138b820b37c3f91aa72f5f012c35516acd4fb62770",
-    "files/lib/wine/x86_64-unix/bcrypt.so": "432e10dcc70330fe2c9d918928a8eeba577e5fd6a041ce6ce3fe2f50d873d7ac"
+    "files/lib/wine/x86_64-unix/bcrypt.so": "432e10dcc70330fe2c9d918928a8eeba577e5fd6a041ce6ce3fe2f50d873d7ac",
+    "files/lib/wine/x86_64-windows/wintrust.dll": "e545e495dc731123fc6442c2867aae3df5898752f356d1e62efcee4a3c5a4720"
   },
   "files": {
     "files/lib/wine/x86_64-windows/ntdll.dll": "46316c11a946b20a50fe8fb5f1688d54cf4b9ebcccb55eafebaf445646bbab44",
@@ -50,7 +51,8 @@
     "files/lib/wine/x86_64-windows/windows.storage.applicationdata.dll": "2d7875a562f0aa509ba39a309bc9f391f55f07b717dd539977f3fd72dca40529",
     "files/lib/wine/x86_64-windows/bcrypt.dll": "a00f427450bb439cb0d087c7c4d028c6aa66e6788b063293d7d2f7c6dfdf451f",
     "files/lib/wine/x86_64-windows/ncrypt.dll": "abbdcb1e71a42218f771a1d2e5062ccc0dde60476554c6d9c9cb73cb5fe1e9ea",
-    "files/lib/wine/x86_64-unix/bcrypt.so": "a558b27b2d55662cc7a5db24972d53deefaa97d25a7f1350fe5071a8b81b4d08"
+    "files/lib/wine/x86_64-unix/bcrypt.so": "a558b27b2d55662cc7a5db24972d53deefaa97d25a7f1350fe5071a8b81b4d08",
+    "files/lib/wine/x86_64-windows/wintrust.dll": "6de74ee506499e1ebe3d2c5c8372011ed4c07974c78647082d56dcef422c5d92"
   },
   "patches": {
     "fenix-loader-case.patch": "0fcf4be0c989566688d1ed334701cc3461c8609f8101d6f20552634b69f7ad1c",
@@ -75,7 +77,8 @@
     "wine-applicationdata-unpackaged.patch": "a0531fd66092ce121c586631bf4820a9448b8915570d9b5f223df327e216e15d",
     "wine-globalroot-device-path.patch": "1267837e07663482de0d5f0b746d65a4a0d6ff37af012d52ff687e27e905cb60",
     "wine-bcrypt-pbkdf2-pseudo-handle.patch": "2552e46a6f8eb2ca6028f44a7428ab084b1140bddf73a6f9fb7c94c05300033e",
-    "wine-ncrypt-ecdh-p256.patch": "be30b4198b8bca42d0c5b68d636d806782ae7705e9ed2cc46f35e58e3256a569"
+    "wine-ncrypt-ecdh-p256.patch": "be30b4198b8bca42d0c5b68d636d806782ae7705e9ed2cc46f35e58e3256a569",
+    "wine-wintrust-pe-indirect-data.patch": "37f38ae999806752085921bd7cea53f706511e2db32c75b667181ac7fb561cc6"
   },
   "sources": {
     "wine-source.tar.gz": "975df721180fc5f53bfefe47cb34ed251083fef9d3c639af849c7c1f1eec3758",
@@ -149,6 +152,15 @@
         "SHA512"
       ],
       "raw_little_endian": true,
+      "steam_container": null
+    },
+    "pe_sip_digest": {
+      "native_checks": 97,
+      "rejected_pe_layouts": 22,
+      "hash_mutations": 4,
+      "pe32_plus_reference": true,
+      "known_windows_sha1": true,
+      "full_native_sip_conformance": false,
       "steam_container": null
     }
   },
@@ -466,7 +478,8 @@
         "files/lib/wine/x86_64-windows/windows.storage.applicationdata.dll": "64a91622b23ab119bc636250d7f973b5cd77a5e8492874465d2f310b4e171512",
         "files/lib/wine/x86_64-windows/bcrypt.dll": "3f2edf914394ee9fe2473569c7271bf211b66947b8ba8b45cacff81d96eab657",
         "files/lib/wine/x86_64-windows/ncrypt.dll": "46f59378633fa4f12f313f150c370ca6d07749b66a74dfd12f1286493170a128",
-        "files/lib/wine/x86_64-unix/bcrypt.so": "d4940ad0e5c56579cabf1e0be3286407ed67492cec330c1889a8c702e96ec499"
+        "files/lib/wine/x86_64-unix/bcrypt.so": "d4940ad0e5c56579cabf1e0be3286407ed67492cec330c1889a8c702e96ec499",
+        "files/lib/wine/x86_64-windows/wintrust.dll": "a71b1a09568cf60a9d2066956c40e192986b301ee16f51eac3713ec2c170bc3e"
       },
       "files": {
         "files/lib/wine/x86_64-windows/ntdll.dll": "4751c1aa9e6f39d60d0f643d60a408051c0e6c1df86806d57aa9f39e84d30ab5",
@@ -487,7 +500,8 @@
         "files/lib/wine/x86_64-windows/windows.storage.applicationdata.dll": "2d7875a562f0aa509ba39a309bc9f391f55f07b717dd539977f3fd72dca40529",
         "files/lib/wine/x86_64-windows/bcrypt.dll": "5978805747af1243c0f4faf72f47e09a1b3b6dbdf383851ed2866006e83bd042",
         "files/lib/wine/x86_64-windows/ncrypt.dll": "abbdcb1e71a42218f771a1d2e5062ccc0dde60476554c6d9c9cb73cb5fe1e9ea",
-        "files/lib/wine/x86_64-unix/bcrypt.so": "a558b27b2d55662cc7a5db24972d53deefaa97d25a7f1350fe5071a8b81b4d08"
+        "files/lib/wine/x86_64-unix/bcrypt.so": "a558b27b2d55662cc7a5db24972d53deefaa97d25a7f1350fe5071a8b81b4d08",
+        "files/lib/wine/x86_64-windows/wintrust.dll": "ff882b740b25bfae35856c4b2092fe9d2f5200b31ec5b87af4c3d63201000685"
       },
       "patches": {
         "proton/experimental-11.patch": "b83c1b4f2559ac602370fbb87e6e0fa2c51a93a7657c14f5b057fab0aff6dcb6",
@@ -499,7 +513,8 @@
         "wine-applicationdata-unpackaged.patch": "a0531fd66092ce121c586631bf4820a9448b8915570d9b5f223df327e216e15d",
         "wine-globalroot-device-path.patch": "1267837e07663482de0d5f0b746d65a4a0d6ff37af012d52ff687e27e905cb60",
         "wine-bcrypt-pbkdf2-pseudo-handle.patch": "2552e46a6f8eb2ca6028f44a7428ab084b1140bddf73a6f9fb7c94c05300033e",
-        "wine-ncrypt-ecdh-p256.patch": "be30b4198b8bca42d0c5b68d636d806782ae7705e9ed2cc46f35e58e3256a569"
+        "wine-ncrypt-ecdh-p256.patch": "be30b4198b8bca42d0c5b68d636d806782ae7705e9ed2cc46f35e58e3256a569",
+        "wine-wintrust-pe-indirect-data.patch": "37f38ae999806752085921bd7cea53f706511e2db32c75b667181ac7fb561cc6"
       },
       "sources": {
         "experimental-11-wine.tar.gz": "0fbe03925523e4cb544c6183528bb3022d725e6a4c9c51c96b85f2429d65d34c",
@@ -573,6 +588,15 @@
             "SHA512"
           ],
           "raw_little_endian": true,
+          "steam_container": "SteamLinuxRuntime_4"
+        },
+        "pe_sip_digest": {
+          "native_checks": 97,
+          "rejected_pe_layouts": 22,
+          "hash_mutations": 4,
+          "pe32_plus_reference": true,
+          "known_windows_sha1": true,
+          "full_native_sip_conformance": false,
           "steam_container": "SteamLinuxRuntime_4"
         }
       },
@@ -761,7 +785,8 @@
         "files/lib/wine/x86_64-windows/windows.storage.applicationdata.dll": "c14a434dc95c52cc5e81721c517d646a8f0c52d881e9c19aaf45a62b2a94bdd1",
         "files/lib/wine/x86_64-windows/bcrypt.dll": "fea742185f4fb57868d36b3506dad84eaae37bb129346bd7944aa9be5589725e",
         "files/lib/wine/x86_64-windows/ncrypt.dll": "d9ebcbd58caf5f1cb1e3f9fafad165f0ac0bf9cf5d21a7d25bbf169088aa7a9a",
-        "files/lib/wine/x86_64-unix/bcrypt.so": "80f27f04734ae61ecf293971b7bbafca59f75edc53e501c63b63674f63f3d47c"
+        "files/lib/wine/x86_64-unix/bcrypt.so": "80f27f04734ae61ecf293971b7bbafca59f75edc53e501c63b63674f63f3d47c",
+        "files/lib/wine/x86_64-windows/wintrust.dll": "5d22b09be7119f7175e77672c0fd8673993d2621adc7ff7db3663e2c3500032d"
       },
       "files": {
         "files/lib/wine/x86_64-windows/ntdll.dll": "804c6863ccf90489b7fbd67e588276d2fa11bdb79a691abe53b0e10429e893c7",
@@ -778,7 +803,8 @@
         "files/lib/wine/x86_64-windows/windows.storage.applicationdata.dll": "1b91587cce7f74e86a5e7047c05571a6f7e643efb14b783178ce256fd121bd9c",
         "files/lib/wine/x86_64-windows/bcrypt.dll": "443334b3e2ec77a8761f629fcf21f6a767e5dcf4ed381c50b55ea4ed4b7a7cb5",
         "files/lib/wine/x86_64-windows/ncrypt.dll": "b3adbdc2ae14ebb5331d6f46bab56edd265fc380f3bf37e9d512fe4047c09fa6",
-        "files/lib/wine/x86_64-unix/bcrypt.so": "fd17a216855eec00e3d19985998f85361d58c0bca3b887f8f9d698231bb61cca"
+        "files/lib/wine/x86_64-unix/bcrypt.so": "fd17a216855eec00e3d19985998f85361d58c0bca3b887f8f9d698231bb61cca",
+        "files/lib/wine/x86_64-windows/wintrust.dll": "07228a51d01e20cb126241655474402d73ea2c38ae537a028e102cab4becb9bf"
       },
       "patches": {
         "proton/cachyos-10.patch": "8ddf687850a02d69ede0398f3554fcfab4128af79a7b1c783443a4cf98b68fe4",
@@ -789,7 +815,8 @@
         "wine-globalroot-device-path.patch": "1267837e07663482de0d5f0b746d65a4a0d6ff37af012d52ff687e27e905cb60",
         "wine-bcrypt-pbkdf2-pseudo-handle.patch": "2552e46a6f8eb2ca6028f44a7428ab084b1140bddf73a6f9fb7c94c05300033e",
         "wine-ncrypt-ecdh-p256.patch": "be30b4198b8bca42d0c5b68d636d806782ae7705e9ed2cc46f35e58e3256a569",
-        "proton/cachyos-10-ncrypt-ecdh-port.patch": "077a271f17889d7e70d350620b21433e033f75e3b623a4da8e8a35dc10b1cfca"
+        "proton/cachyos-10-ncrypt-ecdh-port.patch": "077a271f17889d7e70d350620b21433e033f75e3b623a4da8e8a35dc10b1cfca",
+        "wine-wintrust-pe-indirect-data.patch": "37f38ae999806752085921bd7cea53f706511e2db32c75b667181ac7fb561cc6"
       },
       "sources": {
         "cachyos-10-wine.tar.gz": "066f68466fce324164c36dc4995b2eb9e7d8512da1f12aacd76493a10eb12287"
@@ -852,6 +879,15 @@
             "SHA512"
           ],
           "raw_little_endian": true,
+          "steam_container": "SteamLinuxRuntime_sniper"
+        },
+        "pe_sip_digest": {
+          "native_checks": 97,
+          "rejected_pe_layouts": 22,
+          "hash_mutations": 4,
+          "pe32_plus_reference": true,
+          "known_windows_sha1": true,
+          "full_native_sip_conformance": false,
           "steam_container": "SteamLinuxRuntime_sniper"
         }
       },
@@ -1020,7 +1056,8 @@
         "files/lib/wine/x86_64-windows/windows.storage.applicationdata.dll": "80249b7d9e513327da3a819d1498492a560fc32d3339ed3fde975fd3d99bb2a7",
         "files/lib/wine/x86_64-windows/bcrypt.dll": "dfbc03376dcb250b1613ed2a8f3cfb72665b1456008baac6882d3efd82487d97",
         "files/lib/wine/x86_64-windows/ncrypt.dll": "e84357118f8b44e6a4fe888142c8dbca6d6f496993d1d17d7b966227437c8059",
-        "files/lib/wine/x86_64-unix/bcrypt.so": "4f0ad56e7684bcb2ba425a3ffd0fcb2bfef905d2e4c74b7af31174e866b0b66d"
+        "files/lib/wine/x86_64-unix/bcrypt.so": "4f0ad56e7684bcb2ba425a3ffd0fcb2bfef905d2e4c74b7af31174e866b0b66d",
+        "files/lib/wine/x86_64-windows/wintrust.dll": "f10a47ade0f6c7cfc3d5f368efe0e1975c0ea243d54f4a89a3949d97603ce085"
       },
       "files": {
         "files/lib/wine/x86_64-windows/ntdll.dll": "051eaa5d852f1f078103d2562776a3e977cce30b3cd168acebd951db5ac21cd7",
@@ -1041,7 +1078,8 @@
         "files/lib/wine/x86_64-windows/windows.storage.applicationdata.dll": "e250404eabe6268fefc048debf677ee4d393e6cad13d24d15f76086416807597",
         "files/lib/wine/x86_64-windows/bcrypt.dll": "f071547b55ac9f4571dc68ed056d4c1e9cfc8f8d16761e0a6a843fc3f099af08",
         "files/lib/wine/x86_64-windows/ncrypt.dll": "fb8ce9dd1e2d8deaa3df8baed8cd4faa478e7da462c590982ef309d622138e30",
-        "files/lib/wine/x86_64-unix/bcrypt.so": "a558b27b2d55662cc7a5db24972d53deefaa97d25a7f1350fe5071a8b81b4d08"
+        "files/lib/wine/x86_64-unix/bcrypt.so": "a558b27b2d55662cc7a5db24972d53deefaa97d25a7f1350fe5071a8b81b4d08",
+        "files/lib/wine/x86_64-windows/wintrust.dll": "99134ff02e50dd24e833d65e071eb2d0ec4c38c63e7e6a1ab4f92f3fd74b0436"
       },
       "patches": {
         "proton/cachyos-11.patch": "0992d4c491f37f041490743612b81dd5b2f79ddd618c5c57f91dc03e518373e2",
@@ -1053,7 +1091,8 @@
         "wine-applicationdata-unpackaged.patch": "a0531fd66092ce121c586631bf4820a9448b8915570d9b5f223df327e216e15d",
         "wine-globalroot-device-path.patch": "1267837e07663482de0d5f0b746d65a4a0d6ff37af012d52ff687e27e905cb60",
         "wine-bcrypt-pbkdf2-pseudo-handle.patch": "2552e46a6f8eb2ca6028f44a7428ab084b1140bddf73a6f9fb7c94c05300033e",
-        "wine-ncrypt-ecdh-p256.patch": "be30b4198b8bca42d0c5b68d636d806782ae7705e9ed2cc46f35e58e3256a569"
+        "wine-ncrypt-ecdh-p256.patch": "be30b4198b8bca42d0c5b68d636d806782ae7705e9ed2cc46f35e58e3256a569",
+        "wine-wintrust-pe-indirect-data.patch": "37f38ae999806752085921bd7cea53f706511e2db32c75b667181ac7fb561cc6"
       },
       "sources": {
         "cachyos-11-wine.tar.gz": "b7b036c82661104119694d7ede2a563fea9883f9e75e3c07cfde7632b56a5218",
@@ -1128,6 +1167,15 @@
             "SHA512"
           ],
           "raw_little_endian": true,
+          "steam_container": "SteamLinuxRuntime_4"
+        },
+        "pe_sip_digest": {
+          "native_checks": 97,
+          "rejected_pe_layouts": 22,
+          "hash_mutations": 4,
+          "pe32_plus_reference": true,
+          "known_windows_sha1": true,
+          "full_native_sip_conformance": false,
           "steam_container": "SteamLinuxRuntime_4"
         }
       },
