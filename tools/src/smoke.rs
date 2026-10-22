@@ -431,6 +431,7 @@ impl Stage<'_, '_> {
             "volume-roundtrip-probe",
             "volume-separators-probe",
             "pbkdf2-probe",
+            "ncrypt-ecdh-probe",
         ] {
             let output = work.join(if name == "loader-case-probe" {
                 "Fenix.exe".to_string()
@@ -442,6 +443,7 @@ impl Stage<'_, '_> {
                 "shared-cursor-probe" => &["-luser32", "-lgdi32"],
                 "applicationdata-unpackaged-probe" => &["-lruntimeobject", "-lole32"],
                 "pbkdf2-probe" => &["-lbcrypt"],
+                "ncrypt-ecdh-probe" => &["-lncrypt"],
                 _ => &[],
             };
             let mut compile = argv![

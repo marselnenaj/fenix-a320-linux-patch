@@ -114,6 +114,7 @@ fn expected_calls(work: &str, payload: &str, original: &str, container: bool) ->
     for name in [
         "files/lib/wine/x86_64-unix/ntdll.so",
         "files/bin/wineserver",
+        "files/lib/wine/x86_64-unix/bcrypt.so",
         "files/lib/wine/x86_64-unix/dwrite.so",
         "files/lib/wine/x86_64-unix/win32u.so",
         "files/lib/wine/x86_64-unix/winex11.so",
@@ -205,6 +206,12 @@ fn expected_calls(work: &str, payload: &str, original: &str, container: bool) ->
             &late,
         ),
         ("pbkdf2-probe", "pbkdf2-probe", " [-lbcrypt]", &late),
+        (
+            "ncrypt-ecdh-probe",
+            "ncrypt-ecdh-probe",
+            " [-lncrypt]",
+            &late,
+        ),
     ] {
         expected.extend([
             format!(
@@ -316,6 +323,7 @@ fn probe_lines() -> String {
         "volume-roundtrip-probe",
         "volume-separators-probe",
         "pbkdf2-probe",
+        "ncrypt-ecdh-probe",
     ] {
         lines += &format!("{name}:\n{name}.exe says hello\n{name}.exe notes something\n\n");
     }
@@ -594,7 +602,7 @@ fn a_library_the_runner_did_not_need_is_refused() {
         )
     );
     let calls = fixture.calls();
-    assert_eq!(calls.len(), 10, "{calls:#?}");
+    assert_eq!(calls.len(), 12, "{calls:#?}");
     assert!(calls.iter().all(|call| call.starts_with("readelf [-d] ")));
     // The copy exists, but nothing in it was replaced or started.
     let copied = fixture.lab.base.join("libraries/runner").join(names[1]);
@@ -620,8 +628,8 @@ fn a_runner_that_does_not_start_in_the_container_ends_the_test() {
     let calls = fixture.calls();
     let expected = expected_calls("container", "repo/payload", "runner", true);
     // The server in the container is stopped; no profile was made outside it.
-    assert_eq!(calls, expected[..14].to_vec());
-    assert!(calls[13].starts_with(
+    assert_eq!(calls, expected[..16].to_vec());
+    assert!(calls[15].starts_with(
         "wineserver [-k] cwd=<LAB>/container WINEPREFIX=<LAB>/container/container-prefix "
     ));
     assert!(!fixture.lab.base.join("container/prefix").exists());
