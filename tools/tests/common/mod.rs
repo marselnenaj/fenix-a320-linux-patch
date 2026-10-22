@@ -628,12 +628,13 @@ const INTEGRATION: [&str; 6] = [
     "fenix-display-refresh.py",
 ];
 
-const PROBES: [&str; 8] = [
+const PROBES: [&str; 9] = [
     "loader-case-probe.c",
     "writecopy-probe.c",
     "iocp-smoke.c",
     "audio-notification-probe.c",
     "shared-cursor-probe.c",
+    "applicationdata-unpackaged-probe.c",
     "window-guard-probe.c",
     "path-metrics-probe.cpp",
     "stroke-joins-probe.cpp",

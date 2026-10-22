@@ -40,8 +40,15 @@ preview.9 behebt einen Direct2D-Speicherverlust und begrenzt die Verarbeitung
 fast zusammenfallender Kurven. Vor dem Fenix-Installer wird die anhand ihrer
 Prüfsumme verifizierte .NET-10-Desktop-Runtime installiert; eine fehlende
 Runtime wird auch beim späteren Öffnen ergänzt. Das beseitigt die gemeldete
-fehlende Voraussetzung für Fenix v3. Ein vollständiger v3-Flug wurde noch nicht
-unabhängig geprüft.
+fehlende Voraussetzung bei Fenix-Versionen, die .NET 10 anfordern. Die
+Anforderungen unterscheiden sich je nach Version: Der geprüfte offizielle
+Installer 1.0.359 verwendet .NET 8 und deklariert .NET 8 in seinem eigenen Bootstrap.
+Ein vollständiger v3-Flug wurde noch nicht unabhängig geprüft.
+
+Ein lokaler, noch unveröffentlichter [WinRT-Speicherfix](winrt-storage.md) behebt
+einen separaten Datenbankfehler dieses Installers. Die Update-Planung wurde mit
+Xodus geprüft, native Speichertests mit allen vier Runnern. Flugzeuginstallation,
+Cockpit-Darstellung und vollständige Flüge bleiben ungeprüft.
 
 Der Installer legt das eigene Proton an, weil Steam Proton Experimental laufend
 aktualisiert und die Korrekturen zu genau einem Wine-Stand gehören. Andere

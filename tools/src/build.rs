@@ -16,7 +16,7 @@ use std::{
 };
 
 /// What `make` builds, and where each module belongs in a runner.
-pub const TARGETS: [(&str, &str); 11] = [
+pub const TARGETS: [(&str, &str); 12] = [
     (
         "dlls/ntdll/x86_64-windows/ntdll.dll",
         "files/lib/wine/x86_64-windows/ntdll.dll",
@@ -34,6 +34,10 @@ pub const TARGETS: [(&str, &str); 11] = [
     (
         "dlls/kernelbase/x86_64-windows/kernelbase.dll",
         "files/lib/wine/x86_64-windows/kernelbase.dll",
+    ),
+    (
+        "dlls/windows.storage.applicationdata/x86_64-windows/windows.storage.applicationdata.dll",
+        "files/lib/wine/x86_64-windows/windows.storage.applicationdata.dll",
     ),
     (
         "dlls/d2d1/x86_64-windows/d2d1.dll",

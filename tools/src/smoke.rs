@@ -427,6 +427,7 @@ impl Stage<'_, '_> {
             "iocp-smoke",
             "audio-notification-probe",
             "shared-cursor-probe",
+            "applicationdata-unpackaged-probe",
         ] {
             let output = work.join(if name == "loader-case-probe" {
                 "Fenix.exe".to_string()
@@ -436,6 +437,7 @@ impl Stage<'_, '_> {
             let libraries: &[&str] = match name {
                 "audio-notification-probe" => &["-lole32", "-luuid"],
                 "shared-cursor-probe" => &["-luser32", "-lgdi32"],
+                "applicationdata-unpackaged-probe" => &["-lruntimeobject", "-lole32"],
                 _ => &[],
             };
             let mut compile = argv![

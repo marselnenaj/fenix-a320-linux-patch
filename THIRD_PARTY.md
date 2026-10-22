@@ -90,7 +90,7 @@ setup time and installed in the selected Windows profile. Its SHA-256 is pinned
 in `installer/src/desktop.rs` after verification against Microsoft's published
 SHA-512 release metadata. The Microsoft installer and runtime are not included
 in this project's archives. This modern runtime is separate from .NET Framework
-4.8, which the aircraft still requires.
+4.8, which setup retains for existing Fenix components.
 
 The MCDU refresh helper calls the user’s existing `SimConnect_internal.dll` from
 the installed MSFS 2024 game directory. No SimConnect library or SDK is bundled

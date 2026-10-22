@@ -85,7 +85,7 @@ fn stem() -> String {
 }
 
 /// The source files of the synthetic repository, as they are named in a release.
-const SOURCE: [&str; 43] = [
+const SOURCE: [&str; 44] = [
     ".github/workflows/ci.yml",
     ".gitignore",
     "BUILDING.md",
@@ -114,6 +114,7 @@ const SOURCE: [&str; 43] = [
     "sources/wine-source.tar.gz",
     "sources/x-wine.tar.gz",
     "sources/xgameruntime-source.tar.gz",
+    "tests/applicationdata-unpackaged-probe.c",
     "tests/audio-notification-probe.c",
     "tests/iocp-smoke.c",
     "tests/loader-case-probe.c",
@@ -832,7 +833,7 @@ fn every_linked_crate_must_ship_its_licence() {
             .iter()
             .map(|text| format!("licenses/rust/{}", text.name))
             .collect::<Vec<_>>(),
-        SOURCE[40..]
+        SOURCE[41..]
             .iter()
             .chain(&NOTICES)
             .copied()

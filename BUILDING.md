@@ -43,7 +43,8 @@ xgameruntime submodule, generates spec/Vulkan headers from the included XML,
 and configures Wine with `--enable-win64 --disable-tests --enable-silent-rules
 --without-ffmpeg --without-unwind`. Without the last option `configure` links
 `ntdll.so` against the build host's libunwind, which the pinned runners and the
-Steam Linux Runtime containers do not have. It builds the eleven original targets listed in `tools/src/build.rs` and
+Steam Linux Runtime containers do not have. It builds the twelve targets listed
+in `tools/src/build.rs`, including the WinRT storage module, and
 the independent MIT window guard, geometry setup and MCDU refresh helpers. Debug sections are stripped from release files.
 Compiler prefix maps replace local checkout paths in both Unix and Windows
 modules with `/usr/src/fenix-a320-linux-patch`.
@@ -122,7 +123,7 @@ and keep the existing 32-bit clients. They do not import Xodus's mapped-image
 protocol extension: Flightdeck provides the portable Store loader. The selected
 runner's graphics DLLs are preserved except the same-revision DXGI in overlays
 with their own `dxvk` block. An overlay without that block keeps the original
-eleven Wine targets and does not inherit the base overlay's DXVK build. CachyOS retains its existing
+twelve Wine targets and does not inherit the base overlay's DXVK build. CachyOS retains its existing
 arc/group rendering; exact path streaming avoids its rotated-arc simplification
 error when computing metrics. Its remote-thread activation-context fix belongs
 in ntdll, while Experimental's implementation is in kernelbase.
@@ -137,6 +138,11 @@ Xvfb), and download pinned Microsoft geometry dependencies. They compare route
 metrics and rasterized stroke contours with an independent geometry reference,
 check actual X11 mapping as well as Win32 visibility, and run the existing
 loader, cursor, write-copy, IOCP and audio regressions.
+The unpackaged WinRT probe checks that `ApplicationData.Current` returns the
+native no-package error and clears its output, allowing ordinary desktop
+applications to use their own storage fallback. See the
+[storage compatibility scope](docs/winrt-storage.md) for installer observations
+and validation limits.
 The Direct2D lifetime probe checks live heap growth after 300,000 geometries
 on both normal and error paths, and 20,000 deterministic near-degenerate paths
 with a per-case watchdog. See [lifetime and termination](docs/d2d-lifetime.md).

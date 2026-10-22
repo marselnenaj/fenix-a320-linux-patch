@@ -12,8 +12,8 @@
   [geometry lifetime and termination](d2d-lifetime.md)
   for the reproducible checks and the absolute path-unit tolerance.
 * The standalone installer prepares the pinned Microsoft .NET 10.0.13 x64
-  Desktop Runtime, required by the Fenix v3 installer (issue #7), alongside
-  .NET Framework 4.8. The runtime is also prepared when updating an existing
+  Desktop Runtime for Fenix builds reporting that missing prerequisite
+  (issue #7), alongside .NET Framework 4.8. The runtime is also prepared when updating an existing
   Steam installation and checked before opening an official Fenix application;
   an incomplete installation prevents that launch. Downloads are checksum-verified and not included
   in the release. Runtime installation, host discovery and an own-code WPF

@@ -186,6 +186,12 @@ fn expected_calls(work: &str, payload: &str, original: &str, container: bool) ->
             " [-luser32] [-lgdi32]",
             &late,
         ),
+        (
+            "applicationdata-unpackaged-probe",
+            "applicationdata-unpackaged-probe",
+            " [-lruntimeobject] [-lole32]",
+            &late,
+        ),
     ] {
         expected.extend([
             format!(
@@ -293,6 +299,7 @@ fn probe_lines() -> String {
         "iocp-smoke",
         "audio-notification-probe",
         "shared-cursor-probe",
+        "applicationdata-unpackaged-probe",
     ] {
         lines += &format!("{name}:\n{name}.exe says hello\n{name}.exe notes something\n\n");
     }

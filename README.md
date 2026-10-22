@@ -12,9 +12,15 @@ flight and other Fenix versions have not been independently validated.
 
 **Preview.9** fixes a Direct2D geometry memory leak on all four runners and
 limits subdivision of nearly coincident curves. It also prepares the verified
-Microsoft .NET 10 Desktop Runtime required by the Fenix v3 installer. The setup
-now explicitly asks you to install the A320 inside the official installer before
+Microsoft .NET 10 Desktop Runtime for Fenix builds reporting that missing
+prerequisite. The setup now explicitly asks you to install the A320 inside the
+official installer before
 closing it. See [the changes and validation](docs/release-notes.md).
+
+A local, unreleased [WinRT storage fix](docs/winrt-storage.md) addresses a separate
+database error in Fenix Installer 1.0.359, which targets .NET 8. Update planning
+passed on Xodus and native storage probes passed on all four runners. Aircraft
+installation, cockpit rendering and full-flight behavior remain unverified.
 
 **Preview.8** adds GPU display sharing for the pinned Xodus and
 Proton 11 runners. It fixes the missing shared-texture adapter query and
@@ -75,11 +81,13 @@ one of the exact Xodus/Proton builds pinned in `bundle.json`. From preview.7
 on, the installer is a single self-contained program and needs no Python or
 other runtime; preview.6 and earlier need Python 3.10+. The guided
 setup uses your web browser and needs no additional packages. The Microsoft Framework and geometry
-downloads need internet access. The Linux setup installs the checksum-verified
-x64 .NET 10 Desktop Runtime before starting the Fenix Installer and repairs a
-missing runtime on subsequent launches. The official Fenix Installer handles
-its WebView2, Visual C++ and any other version-specific prerequisites. Fenix v3
-flight compatibility has not been independently validated.
+downloads need internet access. The Linux setup prepares the checksum-verified
+x64 .NET 10 Desktop Runtime to support builds requesting it and repairs a
+missing runtime on subsequent launches. Requirements vary by Fenix version:
+the inspected official Installer 1.0.359 targets .NET 8 and declares .NET 8 in
+its own bootstrap. The official installer handles WebView2, Visual C++ and
+other version-specific prerequisites. Fenix v3 flight compatibility has not
+been independently validated.
 
 Flightdeck can switch a patched installation between supported runners while
 retaining aircraft, add-ons and settings. Each overlay is compiled from that
