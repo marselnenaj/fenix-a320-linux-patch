@@ -30,7 +30,7 @@
   },
   "files": {
     "files/lib/wine/x86_64-windows/ntdll.dll": "46316c11a946b20a50fe8fb5f1688d54cf4b9ebcccb55eafebaf445646bbab44",
-    "files/lib/wine/x86_64-unix/ntdll.so": "dbd97120d3262f9f94e6c187bef5e28f018aa187f4e632e7682cca89c03cf2d8",
+    "files/lib/wine/x86_64-unix/ntdll.so": "93c78b998321b4af09d69423a46b54e57dabc2c181789a50ffc13fa649eabec8",
     "files/bin/wineserver": "ebd8f0861798d5634a3c13b492ada8eb1a6d74d2d3bd600087c0eaaafece02a9",
     "files/lib/wine/x86_64-windows/crypt32.dll": "d7af8990662b2c69b2b0eb8ffeaf32d52e2bf940958708b5accaca0816c17bf5",
     "files/lib/wine/x86_64-windows/mmdevapi.dll": "e85030f6996a4e449ae84fb0a88123ae55f8835d9007975aef945d84ac942571",
@@ -66,7 +66,8 @@
     "wine-d2d1-free-vertex-types.patch": "69854caf8cac3a01e49d0d7ee92a46213bc169423821223e6b7fbf4f9aa3a184",
     "wine-d2d1-bezier-split-limit.patch": "6a5207d4a79df3e94638598a162cc3c7a9a76abf70b0fb7d6d64f82332524cf8",
     "wine-d2d1-triangulation-cycle.patch": "79abb112cfa9ad5caf7656ec64f38f1b7e08e3db219a8957b5c8b2b5bdd4f420",
-    "wine-applicationdata-unpackaged.patch": "a0531fd66092ce121c586631bf4820a9448b8915570d9b5f223df327e216e15d"
+    "wine-applicationdata-unpackaged.patch": "a0531fd66092ce121c586631bf4820a9448b8915570d9b5f223df327e216e15d",
+    "wine-globalroot-device-path.patch": "1267837e07663482de0d5f0b746d65a4a0d6ff37af012d52ff687e27e905cb60"
   },
   "sources": {
     "wine-source.tar.gz": "975df721180fc5f53bfefe47cb34ed251083fef9d3c639af849c7c1f1eec3758",
@@ -101,6 +102,18 @@
       "current_hresult": "0x80073d54",
       "null_output": true,
       "repeat_calls": 3,
+      "steam_container": null
+    },
+    "volume_device_paths": {
+      "scratch_drives": 2,
+      "globalroot_root_and_file": true,
+      "root_separators": [
+        1,
+        2
+      ],
+      "triple_root_separator_rejected": true,
+      "systemroot_controls_unchanged": true,
+      "32bit_server_abi": true,
       "steam_container": null
     }
   },
@@ -419,7 +432,7 @@
       },
       "files": {
         "files/lib/wine/x86_64-windows/ntdll.dll": "4751c1aa9e6f39d60d0f643d60a408051c0e6c1df86806d57aa9f39e84d30ab5",
-        "files/lib/wine/x86_64-unix/ntdll.so": "be17edc8785bfd7b3e6151b072786c95eb3bccf269b82e4cf18d108f424fb669",
+        "files/lib/wine/x86_64-unix/ntdll.so": "59fa7c425bc3c6bf10183ae65ee36576768a8e31aa0ed8819331051fd4fc7342",
         "files/bin/wineserver": "8aa13e1e88ef05206763be1068da6c69d64b54f7cb79b069271d7d56bee6fa20",
         "files/lib/wine/x86_64-windows/crypt32.dll": "9dd0bcad57f32856f6f8c9a3011618bffe65f96f5eeea3078ffe70058bc96c5c",
         "files/lib/wine/x86_64-windows/mmdevapi.dll": "2e0476f872855de0e0a7f7c36f79550629158d53a9c700d4b6036ce21d31ee9d",
@@ -442,7 +455,8 @@
         "wine-d2d1-free-vertex-types.patch": "69854caf8cac3a01e49d0d7ee92a46213bc169423821223e6b7fbf4f9aa3a184",
         "wine-d2d1-bezier-split-limit.patch": "6a5207d4a79df3e94638598a162cc3c7a9a76abf70b0fb7d6d64f82332524cf8",
         "wine-d2d1-triangulation-cycle.patch": "79abb112cfa9ad5caf7656ec64f38f1b7e08e3db219a8957b5c8b2b5bdd4f420",
-        "wine-applicationdata-unpackaged.patch": "a0531fd66092ce121c586631bf4820a9448b8915570d9b5f223df327e216e15d"
+        "wine-applicationdata-unpackaged.patch": "a0531fd66092ce121c586631bf4820a9448b8915570d9b5f223df327e216e15d",
+        "wine-globalroot-device-path.patch": "1267837e07663482de0d5f0b746d65a4a0d6ff37af012d52ff687e27e905cb60"
       },
       "sources": {
         "experimental-11-wine.tar.gz": "0fbe03925523e4cb544c6183528bb3022d725e6a4c9c51c96b85f2429d65d34c",
@@ -477,6 +491,18 @@
           "current_hresult": "0x80073d54",
           "null_output": true,
           "repeat_calls": 3,
+          "steam_container": "SteamLinuxRuntime_4"
+        },
+        "volume_device_paths": {
+          "scratch_drives": 2,
+          "globalroot_root_and_file": true,
+          "root_separators": [
+            1,
+            2
+          ],
+          "triple_root_separator_rejected": true,
+          "systemroot_controls_unchanged": true,
+          "32bit_server_abi": true,
           "steam_container": "SteamLinuxRuntime_4"
         }
       },
@@ -666,7 +692,7 @@
       },
       "files": {
         "files/lib/wine/x86_64-windows/ntdll.dll": "804c6863ccf90489b7fbd67e588276d2fa11bdb79a691abe53b0e10429e893c7",
-        "files/lib/wine/x86_64-unix/ntdll.so": "271f0dd8162b5ef6b6bb54f6db0a54f2c37c4a5efd9fc04842c945f43bb967db",
+        "files/lib/wine/x86_64-unix/ntdll.so": "f5a0c4eb1ab7c593e3eb7c0bf539e225f2f78885974ca143483b5a1b9ccc73f7",
         "files/bin/wineserver": "91b83aaf2a740033a0d9ceafb45346938e9095424c9944807a90ee1f31fc59cc",
         "files/lib/wine/x86_64-windows/crypt32.dll": "b900c1e4e3325b28f280d7f5a5e5668abdd6b69ed59e5715dac6876076222c91",
         "files/lib/wine/x86_64-windows/mmdevapi.dll": "84917aef5b70440d049f2fbe9acc67381ab52875dde6fe560614a455559bebcd",
@@ -683,7 +709,8 @@
         "wine-d2d1-free-vertex-types.patch": "69854caf8cac3a01e49d0d7ee92a46213bc169423821223e6b7fbf4f9aa3a184",
         "wine-d2d1-bezier-split-limit.patch": "6a5207d4a79df3e94638598a162cc3c7a9a76abf70b0fb7d6d64f82332524cf8",
         "wine-d2d1-triangulation-cycle.patch": "79abb112cfa9ad5caf7656ec64f38f1b7e08e3db219a8957b5c8b2b5bdd4f420",
-        "wine-applicationdata-unpackaged.patch": "a0531fd66092ce121c586631bf4820a9448b8915570d9b5f223df327e216e15d"
+        "wine-applicationdata-unpackaged.patch": "a0531fd66092ce121c586631bf4820a9448b8915570d9b5f223df327e216e15d",
+        "wine-globalroot-device-path.patch": "1267837e07663482de0d5f0b746d65a4a0d6ff37af012d52ff687e27e905cb60"
       },
       "sources": {
         "cachyos-10-wine.tar.gz": "066f68466fce324164c36dc4995b2eb9e7d8512da1f12aacd76493a10eb12287"
@@ -707,6 +734,18 @@
           "current_hresult": "0x80073d54",
           "null_output": true,
           "repeat_calls": 3,
+          "steam_container": "SteamLinuxRuntime_sniper"
+        },
+        "volume_device_paths": {
+          "scratch_drives": 2,
+          "globalroot_root_and_file": true,
+          "root_separators": [
+            1,
+            2
+          ],
+          "triple_root_separator_rejected": true,
+          "systemroot_controls_unchanged": true,
+          "32bit_server_abi": true,
           "steam_container": "SteamLinuxRuntime_sniper"
         }
       },
@@ -876,7 +915,7 @@
       },
       "files": {
         "files/lib/wine/x86_64-windows/ntdll.dll": "051eaa5d852f1f078103d2562776a3e977cce30b3cd168acebd951db5ac21cd7",
-        "files/lib/wine/x86_64-unix/ntdll.so": "fa3b6517d36c9465bfef590c79daaf4415c5731989d27e4d3f442f3d9526aed7",
+        "files/lib/wine/x86_64-unix/ntdll.so": "9eaa6daaecc497c8b0eec514e28a88d6430ebf1dcb988ec6adccb71cdefcd793",
         "files/bin/wineserver": "aaaa4cebf17c2fef58fcbf2c759659109d48d40b3cc5a1279100acded23094cb",
         "files/lib/wine/x86_64-windows/crypt32.dll": "a40827bf153753b7c1e51279e62d6c07de119d4afe17bf8f31bac76f9c098d7b",
         "files/lib/wine/x86_64-windows/mmdevapi.dll": "b37a39364f74df0ad460a2eb94db010e6b5184d10a4bc0ad00084876e1cfe605",
@@ -899,7 +938,8 @@
         "wine-d2d1-free-vertex-types.patch": "69854caf8cac3a01e49d0d7ee92a46213bc169423821223e6b7fbf4f9aa3a184",
         "wine-d2d1-bezier-split-limit.patch": "6a5207d4a79df3e94638598a162cc3c7a9a76abf70b0fb7d6d64f82332524cf8",
         "wine-d2d1-triangulation-cycle.patch": "79abb112cfa9ad5caf7656ec64f38f1b7e08e3db219a8957b5c8b2b5bdd4f420",
-        "wine-applicationdata-unpackaged.patch": "a0531fd66092ce121c586631bf4820a9448b8915570d9b5f223df327e216e15d"
+        "wine-applicationdata-unpackaged.patch": "a0531fd66092ce121c586631bf4820a9448b8915570d9b5f223df327e216e15d",
+        "wine-globalroot-device-path.patch": "1267837e07663482de0d5f0b746d65a4a0d6ff37af012d52ff687e27e905cb60"
       },
       "sources": {
         "cachyos-11-wine.tar.gz": "b7b036c82661104119694d7ede2a563fea9883f9e75e3c07cfde7632b56a5218",
@@ -935,6 +975,18 @@
           "current_hresult": "0x80073d54",
           "null_output": true,
           "repeat_calls": 3,
+          "steam_container": "SteamLinuxRuntime_4"
+        },
+        "volume_device_paths": {
+          "scratch_drives": 2,
+          "globalroot_root_and_file": true,
+          "root_separators": [
+            1,
+            2
+          ],
+          "triple_root_separator_rejected": true,
+          "systemroot_controls_unchanged": true,
+          "32bit_server_abi": true,
           "steam_container": "SteamLinuxRuntime_4"
         }
       },

@@ -192,6 +192,18 @@ fn expected_calls(work: &str, payload: &str, original: &str, container: bool) ->
             " [-lruntimeobject] [-lole32]",
             &late,
         ),
+        (
+            "volume-roundtrip-probe",
+            "volume-roundtrip-probe",
+            "",
+            &late,
+        ),
+        (
+            "volume-separators-probe",
+            "volume-separators-probe",
+            "",
+            &late,
+        ),
     ] {
         expected.extend([
             format!(
@@ -300,6 +312,8 @@ fn probe_lines() -> String {
         "audio-notification-probe",
         "shared-cursor-probe",
         "applicationdata-unpackaged-probe",
+        "volume-roundtrip-probe",
+        "volume-separators-probe",
     ] {
         lines += &format!("{name}:\n{name}.exe says hello\n{name}.exe notes something\n\n");
     }
@@ -357,6 +371,14 @@ fn a_whole_smoke_test_runs_every_probe_and_stops_wine() {
     assert!(started.elapsed() < Duration::from_secs(60));
 
     let work = base.join("work");
+    assert!(work.join("prefix/drive_d").is_dir());
+    assert!(work.join("prefix/drive_c").is_dir());
+    for (drive, target) in [("c:", "../drive_c"), ("d:", "../drive_d"), ("z:", "/")] {
+        assert_eq!(
+            std::fs::read_link(work.join("prefix/dosdevices").join(drive)).unwrap(),
+            PathBuf::from(target)
+        );
+    }
     let lock = fixture.tree.lock();
     for (name, expected) in lock["files"].as_object().unwrap() {
         // The copy has the overlay, the runner it was copied from has not.

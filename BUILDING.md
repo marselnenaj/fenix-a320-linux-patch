@@ -143,6 +143,12 @@ native no-package error and clears its output, allowing ordinary desktop
 applications to use their own storage fallback. See the
 [storage compatibility scope](docs/winrt-storage.md) for installer observations
 and validation limits.
+The volume-path probes use separate C/D scratch roots, discover their actual
+NT identities and compare direct NT/GLOBALROOT paths with extended-DOS
+controls, including root separator counts and unchanged SystemRoot behavior.
+See [NT volume device paths](docs/volume-device-paths.md) for the filesystem
+scope and local Fenix observations. `ntdll.so` is already a standard build
+target; this fix changes no server protocol or Windows NTDLL module.
 The Direct2D lifetime probe checks live heap growth after 300,000 geometries
 on both normal and error paths, and 20,000 deterministic near-degenerate paths
 with a per-case watchdog. See [lifetime and termination](docs/d2d-lifetime.md).

@@ -428,6 +428,8 @@ impl Stage<'_, '_> {
             "audio-notification-probe",
             "shared-cursor-probe",
             "applicationdata-unpackaged-probe",
+            "volume-roundtrip-probe",
+            "volume-separators-probe",
         ] {
             let output = work.join(if name == "loader-case-probe" {
                 "Fenix.exe".to_string()
@@ -583,6 +585,17 @@ pub fn run(ctx: &Context<'_>, options: &Options) -> Result<()> {
         check_container(ctx, runtime, &runner, &work)?;
     }
     let prefix = work.join("prefix");
+    // Two independent scratch roots exercise live NT-device lookup. The
+    // prefix is new, so this cannot replace a user's existing drive mapping.
+    util::mkdir_new(&prefix)?;
+    for directory in ["drive_c", "drive_d", "dosdevices"] {
+        util::mkdir_new(&prefix.join(directory))?;
+    }
+    // Wine sees an existing prefix here, so provide the standard C/Z links
+    // alongside the additional D scratch root before wineboot initializes it.
+    for (drive, target) in [("c:", "../drive_c"), ("d:", "../drive_d"), ("z:", "/")] {
+        fsx::symlink(Path::new(target), &prefix.join("dosdevices").join(drive))?;
+    }
     let mut env = core::wine_env(system, &prefix, &runner);
     env.set("WINEDLLOVERRIDES", "winemenubuilder.exe=d;mscoree,mshtml=");
     let stage = Stage {
