@@ -1,0 +1,29 @@
+Subject: [PATCH] d2d1: Stop splitting degenerate overlapping bezier control triangles.
+
+d2d_geometry_resolve_beziers() splits the larger of two overlapping bezier
+control triangles until they no longer overlap, without a lower bound. For
+nearly coincident curves (FenixDisplay produces them in PFD/ND glyph and
+symbol outlines) float rounding can keep the halves overlapping forever, so
+ID2D1GeometrySink::Close() never returns and the display thread hangs at
+100% CPU. Stop once both triangles have degenerated below 1e-5 (or are NaN)
+and treat the pair as not overlapping.
+---
+--- a/dlls/d2d1/geometry.c
++++ b/dlls/d2d1/geometry.c
+@@ -3419,7 +3419,15 @@
+         {
+             while (d2d_geometry_check_bezier_overlap(geometry, &idx_p, &idx_q))
+             {
+-                if (fabsf(d2d_geometry_bezier_ccw(geometry, &idx_q)) > fabsf(d2d_geometry_bezier_ccw(geometry, &idx_p)))
++                float area_p = fabsf(d2d_geometry_bezier_ccw(geometry, &idx_p));
++                float area_q = fabsf(d2d_geometry_bezier_ccw(geometry, &idx_q));
++
++                /* Each split roughly halves a control triangle. For nearly
++                 * coincident curves rounding can keep the triangles overlapping
++                 * forever, so stop once both have degenerated (or are NaN). */
++                if (!(area_p >= 1e-5f || area_q >= 1e-5f))
++                    break;
++                if (area_q > area_p)
+                 {
+                     if (!d2d_geometry_split_bezier(geometry, &idx_q))
+                         return E_OUTOFMEMORY;
