@@ -6,11 +6,11 @@ a stub. It is not a complete native SIP implementation.
 
 In the isolated Fenix 3.0.0.7454 investigation, replacing that stub allowed
 the launcher to stay running and the three child images to pass preflight.
-Those live observations used earlier diagnostic modules. The final V4
-modules have the own-code checks below. A final combined retry reached
-System boot, then hit a Wine memory-view assertion under separate
-investigation. Stable operation, working cockpit displays and a complete
-flight remain unverified.
+The final V4 production module also passes the three child image checks in
+the real application and has the own-code checks below. One combined retry
+reached System boot, then hit a Wine memory-view assertion. Later starts
+avoided it, and the tester confirmed working cockpit displays. Stable
+operation and a complete flight remain unverified; see [the v3 result](fenix-v3.md).
 
 ## Supported input
 

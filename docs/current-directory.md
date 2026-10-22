@@ -67,4 +67,8 @@ SimConnect Connected, and kept children/Gateway alive. A subsequent trial
 with the final combined payloads reached link setup/System boot and then
 hit a Wine memory-view assertion. Its cause is being investigated
 independently; that occurrence does not establish a cwd or crypto regression.
-Stable v3 operation, cockpit rendering and a full flight remain unverified.
+An unchanged production repeat ran for about five minutes without that
+assertion. A later run with address-only Unix NTDLL logging also avoided it,
+and the tester confirmed working displays before closing MSFS. The diagnostic
+logging is excluded from the payload. Stable v3 operation and a full flight
+remain unverified; see [the complete v3 result](fenix-v3.md).

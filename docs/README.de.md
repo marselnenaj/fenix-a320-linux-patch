@@ -45,10 +45,15 @@ Anforderungen unterscheiden sich je nach Version: Der geprüfte offizielle
 Installer 1.0.359 verwendet .NET 8 und deklariert .NET 8 in seinem eigenen Bootstrap.
 Ein vollständiger v3-Flug wurde noch nicht unabhängig geprüft.
 
-Ein lokaler, noch unveröffentlichter [WinRT-Speicherfix](winrt-storage.md) behebt
-einen separaten Datenbankfehler dieses Installers. Die Update-Planung wurde mit
-Xodus geprüft, native Speichertests mit allen vier Runnern. Flugzeuginstallation,
-Cockpit-Darstellung und vollständige Flüge bleiben ungeprüft.
+Der **noch unveröffentlichte Kandidat für preview.10** behebt zusätzlich die
+WinRT-, Signaturdaten-, Pfad- und Kryptografiefehler beim Start von Fenix
+**3.0.0.7454**. Der offizielle Installer **1.0.359** hat die Installation
+abgeschlossen; Anmeldung, Systemstart und funktionierende Cockpit-Anzeigen
+wurden mit Xodus/MSFS 2024 geprüft. Ein Start traf eine Wine-Speicherassertion,
+die bei späteren Starts nicht erneut auftrat. Die Veröffentlichung bleibt
+deshalb vorerst zurückgestellt. Vollständige Flüge, Steam/MSFS 2020 und echte
+v3-Cockpit-Tests mit den anderen Runnern fehlen weiterhin. Siehe
+[v3-Prüfstand und Grenzen](fenix-v3.md).
 
 Der Installer legt das eigene Proton an, weil Steam Proton Experimental laufend
 aktualisiert und die Korrekturen zu genau einem Wine-Stand gehören. Andere

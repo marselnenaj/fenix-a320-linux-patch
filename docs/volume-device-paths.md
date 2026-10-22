@@ -66,6 +66,7 @@ blocker, not a standalone v3 compatibility result.
 The integrated form restricts separator handling to the device branch. Its
 native probes and a subsequent real Xodus retry also pass all three image
 preflight checks. With the separate BCrypt candidate, authorization
-preparation and System process launch completed. Later initialization still
-requires compatibility work. Cockpit rendering and full-flight behavior are
-not established. No release version is assigned to this local candidate.
+preparation and System process launch completed. The other preview.10 fixes
+then enabled System startup and user-confirmed displays on Xodus. A Wine
+startup assertion and full-flight stability remain open; see
+[the combined v3 result](fenix-v3.md).

@@ -63,7 +63,8 @@ System process launch to complete. Later System initialization requires
 separate compatibility work. This fixes the API contract and preserves the
 application's own cryptographic inputs and checks.
 
-The integrated production payloads pass the four-runner native tests. Their
-final real-application retry remains separate. SHA3, performance, the full
-CNG surface, cockpit rendering and full-flight behavior are not established
-by these checks. No release version is assigned to this local candidate.
+The integrated production payloads pass the four-runner native tests and
+the real application completes authorization preparation. Subsequent System
+startup/display observations use the other preview.10 fixes too; see
+[the combined v3 result](fenix-v3.md). SHA3, performance, the full CNG surface
+and full-flight behavior are not established by these checks.

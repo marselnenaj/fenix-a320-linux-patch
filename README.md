@@ -8,7 +8,14 @@ Community preview; independent of Fenix Simulations, Microsoft and Asobo.
 This packages the Wine fixes tested with Fenix **2.4.0.4720**, MSFS 2024
 **1.8.16.0** and Xodus Wine **11.0 / 7c0b4354**. PFD, ND, ECAM, MCDU, clock,
 FCU and radio display rendering were checked in a running cockpit. A complete
-flight and other Fenix versions have not been independently validated.
+flight has not been independently validated.
+
+The **unreleased preview.10 candidate** also installs Fenix **3.0.0.7454**
+with official Installer **1.0.359**, completes login/System startup and has
+user-confirmed working cockpit displays on the same Xodus/MSFS 2024 setup.
+One startup hit a Wine memory-view assertion; later starts did not reproduce
+it. Publication is held while that stability result remains unresolved.
+See [v3 validation and limits](docs/fenix-v3.md).
 
 **Preview.9** fixes a Direct2D geometry memory leak on all four runners and
 limits subdivision of nearly coincident curves. It also prepares the verified
@@ -17,10 +24,13 @@ prerequisite. The setup now explicitly asks you to install the A320 inside the
 official installer before
 closing it. See [the changes and validation](docs/release-notes.md).
 
-A local, unreleased [WinRT storage fix](docs/winrt-storage.md) addresses a separate
-database error in Fenix Installer 1.0.359, which targets .NET 8. Update planning
-passed on Xodus and native storage probes passed on all four runners. Aircraft
-installation, cockpit rendering and full-flight behavior remain unverified.
+The v3 candidate includes [WinRT storage](docs/winrt-storage.md),
+[PE image digests](docs/pe-indirect-data.md),
+[volume paths](docs/volume-device-paths.md),
+[PBKDF2](docs/pbkdf2-pseudo-handle.md), [ephemeral ECDH](docs/ncrypt-ecdh.md)
+and [working-directory](docs/current-directory.md) fixes. Matching native
+checks pass on all four pinned runners; real v3 cockpit testing covers Xodus
+only. Full-flight stability remains unverified.
 
 **Preview.8** adds GPU display sharing for the pinned Xodus and
 Proton 11 runners. It fixes the missing shared-texture adapter query and
@@ -122,7 +132,7 @@ geometry dependency, copies the existing runner's fonts and graphics dependencie
 and installs the compatibility overlay after the staging Wine session exits. It retains the
 original runner, profile and launch scripts. An interrupted installation has a
 recovery journal. Repeating an already completed installation verifies its files.
-Running `install` from preview.9 also updates verified preview.1–preview.8 installations,
+Running `install` from preview.10 also updates verified preview.1–preview.9 installations,
 retaining installed aircraft, settings and the original restore point. On Steam it
 replaces an earlier supported overlay in place. An earlier automatic CPU setting
 migrates to GPU when the selected overlay supports it. An explicit
@@ -164,8 +174,8 @@ continues to render the displays. See [the rendering checks](docs/stroke-contour
 
 The release contains our installer and helper tools, Wine and DXVK patches,
 replacement binaries and their complete source archives/build instructions.
-GPU overlays contain fourteen Wine modules and one DXGI DLL; CPU-only overlays
-retain eleven Wine modules.
+GPU overlays contain nineteen Wine modules and one DXGI DLL; CPU-only overlays
+contain sixteen Wine modules.
 **No Fenix or Microsoft binaries, aircraft, fonts, activation data, saved
 profiles or private logs are included.** Microsoft redistributables are fetched
 from Microsoft and verified against pinned hashes. Existing fonts are read

@@ -1,3 +1,33 @@
+# 0.1.0-preview.10 — unreleased candidate, 23 October 2026
+
+This candidate reaches user-confirmed cockpit displays with Fenix
+**3.0.0.7454**, official Installer **1.0.359**, MSFS 2024 **1.8.16.0** and
+Xodus **11.0 / 7c0b4354**. Publication is held: one startup hit Wine's
+`create_view` assertion after System boot; later starts did not reproduce it.
+No full flight or MSFS 2020/GE regression check has been completed.
+See [the test sequence and limits](fenix-v3.md).
+
+* Return the native no-package error from WinRT `ApplicationData.Current`
+  for ordinary desktop processes. The new installer's existing SQLite
+  fallback then works, and the official aircraft installation completes.
+* Implement a bounded SHA1/SHA256 PE indirect-data route for
+  `CryptSIPCreateIndirectData`, replacing the startup stub. Complete native
+  SIP representation and certificate trust conformance are not established.
+* Reopen `GLOBALROOT` aliases through their actual volume mapping, preserve
+  separator counts, and store a rooted current directory. This clears the
+  brief invalid-name failure and later engine/content-root lookup failures.
+* Map the missing PBKDF2 pseudo-handle to Wine's existing implementation.
+* Support unnamed ephemeral NCrypt `ECDH_P256` keys with scoped BCrypt
+  parameter validation, provider lifetime and HASH/raw derivation handling.
+  Other curves, named keys and the full CNG API remain outside this change.
+* Include matching builds and independent native controls for all four
+  pinned runners. Real v3 cockpit checks cover Xodus only. Verified preview.9
+  installations can update without reinstalling the aircraft or resetting
+  renderer preferences and the original restore point.
+
+The vendor executables and their authentication remain unchanged. Diagnostic
+memory logging, APC and KernelBase experiments are excluded from the payload.
+
 # 0.1.0-preview.9 — 22 October 2026
 
 * All four overlays free Direct2D figure vertex types, backporting Wine

@@ -7,8 +7,9 @@ Xodus modules completed Systems link setup in 8,894 ms, kept FenixSystem
 running and spawned its gateway. The separate application-folder defect is
 addressed by the [current-directory change](current-directory.md). A final
 combined retry reached System boot, then hit a Wine memory-view assertion
-under separate investigation. Stable operation, working cockpit displays
-and a complete flight are unverified.
+under separate investigation. Later starts avoided that assertion, and the
+tester confirmed working cockpit displays. Stable operation and a complete
+flight remain unverified; see [the v3 result](fenix-v3.md).
 
 ## Supported scope
 

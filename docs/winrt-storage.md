@@ -37,8 +37,9 @@ A separate .NET 8 probe using the shipped SQLite dependency also completed
 `SELECT sqlite_version()` with SQLite **3.46.1**. These observations establish
 database initialization and update planning. The official installer later
 completed installation of aircraft **3.0.0.7454** on the tested Xodus profile.
-Aircraft startup needed additional compatibility fixes; cockpit rendering
-and full-flight behavior remain unverified.
+Aircraft startup needed additional compatibility fixes. Later tests reached
+System startup and user-confirmed cockpit displays on Xodus; a Wine startup
+assertion and full-flight stability remain open. See [the v3 result](fenix-v3.md).
 
 The previously added .NET 10 prerequisite support remains unchanged. Installer
 1.0.359's .NET 8 storage failure is a separate compatibility problem.
@@ -62,5 +63,5 @@ Only the affected module was rebuilt for this check. The builds used private
 copies of the corresponding pinned Wine sources; the original sources and
 runners remained unchanged. The normal build now includes the module in each
 overlay, with original-runner and candidate-payload hashes in `bundle.json`.
-Preview.9's file sets are retained as previous-release snapshots for a future
-upgrade. This candidate has no new release version assigned.
+Preview.9's file sets are retained as previous-release snapshots for an
+in-place upgrade. This change is part of the unreleased preview.10 candidate.

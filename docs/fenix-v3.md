@@ -1,0 +1,75 @@
+# Fenix v3 test result
+
+The unreleased **0.1.0-preview.10** candidate installs aircraft
+**3.0.0.7454** through official Fenix Installer **1.0.359**, completes login
+and System startup, and reaches **user-confirmed working cockpit displays**.
+The real test used MSFS 2024 **1.8.16.0**, Xodus Wine **11.0 / 7c0b4354**,
+GPU displays and Legacy readouts. It was an isolated installation with the
+original Fenix executables and ordinary authentication.
+
+Publication is held because one startup hit Wine's memory-view assertion.
+The issue remains [open](https://github.com/marselnenaj/fenix-a320-linux-patch/issues/7#issuecomment-6350550099).
+
+## Compatibility changes
+
+| Observed failure | Wine change |
+| --- | --- |
+| Installer SQLite initialization throws at `ApplicationData.LocalFolder` | [Return the no-package error](winrt-storage.md), allowing the existing desktop fallback |
+| Main launcher exits at the SIP stub | [Bounded PE SHA1/SHA256 indirect data](pe-indirect-data.md) |
+| Brief invalid-name error before child image validation | [Resolve GLOBALROOT through live volume identities](volume-device-paths.md) |
+| Authorization preparation rejects PBKDF2 handle `0x331` | [Map the documented pseudo-handle](pbkdf2-pseudo-handle.md) |
+| System link rejects ephemeral `ECDH_P256` | [Scoped NCrypt key/secret operations and BCrypt validation](ncrypt-ecdh.md) |
+| Relative engine-model and service content-root lookups use bare GLOBALROOT paths | [Store an absolute current directory](current-directory.md) |
+
+All four pinned runners have matching source/binary builds and pass the
+independent native controls for these changes. Their complete archive and
+ordered patch replays match the built sources. These API checks do not
+establish a working v3 cockpit on every runner.
+
+## Actual runtime observations
+
+The official installer completes all four update plans and the aircraft
+installation. The three unchanged child executables pass image validation.
+After the working-directory fix, the engine-model and content-root errors
+disappear; System boots, connects through SimConnect and starts its gateway.
+A read-only 30-second SimConnect observation records simulator frames and
+changing engine values, separately from the visual confirmation.
+
+One complete production-payload start then hits
+`ntdll/unix/virtual.c:create_view: view->protect & VPROT_SYSTEM`, followed by
+System exit status `0x80000101`. No Linux core dump or OOM event was found.
+An unchanged production repeat boots and runs for about five minutes without
+the assertion. The next run adds only address/protection/caller logging to
+Unix NTDLL, retains the assertion and also avoids it. During that run the
+tester reports that the displays work, then closes MSFS. This final visual
+confirmation therefore includes diagnostic logging; it is not a completed
+visual check of a diagnostic-free release installation.
+
+The diagnostic module is excluded from the payload and was restored to the
+production module after the test. Independent allocation/placeholder controls
+pass 10,753 checks with write-copy tracking both disabled and enabled. Those
+controls do not reproduce or explain the application assertion. No speculative
+memory-manager change is included.
+
+The repeated DXVK `Cannot relocate image` messages were also checked with
+an independent shader-draw/shared-copy probe using the same D3D11 revision.
+On the tested AMD/RADV setup, 24 matching messages accompany 147,456 exact
+pixel comparisons with no mismatches or timeouts, including a second-device
+import. Source inspection identifies a rejected optional inline optimization
+followed by the normal copy. This bounded result does not establish every
+application transport case; it provides no reason to change graphics defaults
+or suppress errors. No additional graphics setting is included.
+
+## Remaining limits
+
+The startup assertion's cause and recurrence rate remain unknown. A full
+flight, long-session stability, individual display/mode coverage, Steam and
+MSFS 2020/GE behavior, other runners in a real v3 cockpit, NVIDIA and weather
+radar remain unverified. The short display confirmation does not close the
+reported freeze/stall issue.
+
+The bounded SIP output representation is not fully compared with native
+Windows, and NCrypt support covers only the documented subset linked above.
+The .NET 10 prerequisite preparation from preview.9 is retained; it does not
+explain the .NET 8 installer's separate SQLite failure. No general .NET/CNG
+compatibility or need for an extra global runtime is inferred from these tests.
