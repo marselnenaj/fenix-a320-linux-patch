@@ -1,3 +1,21 @@
+# 0.1.0 — in preparation, not published
+
+* Explicitly select server synchronization for Fenix: `PROTON_NO_NTSYNC=1`
+  for pinned Wine 11 and `WINE_DISABLE_FAST_SYNC=1` for CachyOS 10. Steam
+  updates retain other Python settings while adding these switches; the
+  standalone application's environment and legacy launch script agree.
+  This corrects a configuration mismatch, not a confirmed cause/fix of the
+  NVIDIA Display crash or Gateway spin in #7.
+* Retain exact preview.10 snapshots for upgrades; native overlay modules
+  and runner pins are unchanged.
+* Rewrite English/German READMEs around setup, evidence, restore and
+  troubleshooting. Add an own-code graphics-initialization diagnostic and
+  document the remaining #7/#12 work.
+
+See [release readiness](release-readiness.md) and the
+[Display/Gateway investigation](display-startup.md). The published download
+remains preview.10; this section does not announce a regular release.
+
 # 0.1.0-preview.10 — experimental, 23 October 2026
 
 This test release reaches user-confirmed cockpit displays with Fenix
@@ -29,13 +47,17 @@ See [the test sequence and limits](fenix-v3.md).
 The vendor executables and their authentication remain unchanged. Diagnostic
 memory logging, APC and KernelBase experiments are excluded from the payload.
 The issue and draft PR remain open for stability investigation. Flightdeck's
-separate patch pin is not updated by publishing this experimental release.
+separate patch pin was subsequently updated in Flightdeck **0.2.18**. A later
+Steam/MSFS 2020 NVIDIA report confirms installation/login/System but still
+fails Display and Gateway startup; see [the follow-up](display-startup.md).
 
 # 0.1.0-preview.9 — 22 October 2026
 
 * All four overlays free Direct2D figure vertex types, backporting Wine
   `4ae80e26e5` from M3rocto's PR #10. This fixes the per-geometry leak
-  reported in issue #8; long-flight process memory behaviour remains unvalidated.
+  reported in issue #8. A later community 1 h 53 min v2 flight reported stable
+  Display memory and no frozen displays. Its separate System RSS growth
+  remains open in [#12](https://github.com/marselnenaj/fenix-a320-linux-patch/issues/12).
 * Nearly coincident Bézier control triangles have a subdivision limit;
   non-finite areas and invalid line-intersection parameters are rejected.
   The new stress test also found two cyclic triangulation walks, which now

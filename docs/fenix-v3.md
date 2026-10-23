@@ -1,4 +1,4 @@
-# Fenix v3 test result
+# Fenix v3 compatibility and validation
 
 The experimental **0.1.0-preview.10** installs aircraft
 **3.0.0.7454** through official Fenix Installer **1.0.359**, completes login
@@ -10,6 +10,13 @@ original Fenix executables and ordinary authentication.
 An experimental download is provided for further testing. One startup hit
 Wine's memory-view assertion, whose cause remains unknown. The issue remains
 [open](https://github.com/marselnenaj/fenix-a320-linux-patch/issues/7#issuecomment-6350550099).
+
+A later Steam/MSFS 2020 report with pinned CachyOS 11 and NVIDIA/PRIME
+confirms installation, login, System and CDU, but encounters a Display
+initialization exception and an early Gateway spin. These are separate from
+earlier installer/path/crypto failures. See [the follow-up](display-startup.md).
+The 0.1.0 source candidate corrects a synchronization configuration mismatch;
+the reported failures are not yet confirmed fixed.
 
 ## Compatibility changes
 
@@ -67,7 +74,10 @@ reserve/partial-commit/reset/decommit/write-watch and RX/RW checks, plus
 4,815 checks involving three disjoint sparse eight-GiB arenas and persistent
 RX/RW data pools. They do not reproduce the assertion. The primary .NET
 10.0.13 source is a control/reference; the actual application's 10.0.12-dev
-NativeAOT build and allocation schedule are not established by it.
+runtime and allocation schedule are not established by it. Although its
+banner says NativeAOT, inspection finds CIL/ReadyToRun payloads and a native
+single-file host consistent with statically linked CoreCLR. The banner alone
+does not support a pure NativeAOT classification.
 
 The repeated DXVK `Cannot relocate image` messages were also checked with
 an independent shader-draw/shared-copy probe using the same D3D11 revision.
@@ -86,9 +96,9 @@ MSFS 2020/GE behavior, other runners in a real v3 cockpit, NVIDIA and weather
 radar remain unverified. The short display confirmation does not close the
 reported freeze/stall issue.
 
-The release is experimental and the draft PR remains open. Flightdeck uses
-its own pinned patch manifest; this download does not change its automatic
-patch selection. No general startup or long-flight stability guarantee follows
+The published release is experimental and the draft PR remains open.
+Flightdeck 0.2.18 pins preview.10; future changes require a separate manifest
+update. No general startup or long-flight stability guarantee follows
 from the bounded successful repeats.
 
 The bounded SIP output representation is not fully compared with native
