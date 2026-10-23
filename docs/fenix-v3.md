@@ -1,14 +1,15 @@
 # Fenix v3 test result
 
-The unreleased **0.1.0-preview.10** candidate installs aircraft
+The experimental **0.1.0-preview.10** installs aircraft
 **3.0.0.7454** through official Fenix Installer **1.0.359**, completes login
 and System startup, and reaches **user-confirmed working cockpit displays**.
 The real test used MSFS 2024 **1.8.16.0**, Xodus Wine **11.0 / 7c0b4354**,
 GPU displays and Legacy readouts. It was an isolated installation with the
 original Fenix executables and ordinary authentication.
 
-Publication is held because one startup hit Wine's memory-view assertion.
-The issue remains [open](https://github.com/marselnenaj/fenix-a320-linux-patch/issues/7#issuecomment-6350550099).
+An experimental download is provided for further testing. One startup hit
+Wine's memory-view assertion, whose cause remains unknown. The issue remains
+[open](https://github.com/marselnenaj/fenix-a320-linux-patch/issues/7#issuecomment-6350550099).
 
 ## Compatibility changes
 
@@ -42,14 +43,31 @@ An unchanged production repeat boots and runs for about five minutes without
 the assertion. The next run adds only address/protection/caller logging to
 Unix NTDLL, retains the assertion and also avoids it. During that run the
 tester reports that the displays work, then closes MSFS. This final visual
-confirmation therefore includes diagnostic logging; it is not a completed
-visual check of a diagnostic-free release installation.
+initial confirmation therefore included diagnostic logging. The follow-up
+below checks the production payload separately.
 
 The diagnostic module is excluded from the payload and was restored to the
 production module after the test. Independent allocation/placeholder controls
 pass 10,753 checks with write-copy tracking both disabled and enabled. Those
 controls do not reproduce or explain the application assertion. No speculative
 memory-manager change is included.
+
+On 23 October, a fresh isolated MSFS launch and all twenty production module
+hashes were checked, with no diagnostic module or new graphics override.
+The tester confirmed the displays again, and System, Display, CDU and the
+gateway were running with System reporting Connected. Five additional warm
+Fenix backend restarts all connected and remained alive for at least sixty
+seconds after connection. No assertion or invalid-stack-frame signal appeared
+in these six starts. The simulator stayed running between backend restarts;
+these are not six simulator cold starts. Read-only SimConnect observations
+also confirm aircraft/frame data and changing engine values.
+
+Additional independent NativeAOT-shaped controls pass 6,465 GC
+reserve/partial-commit/reset/decommit/write-watch and RX/RW checks, plus
+4,815 checks involving three disjoint sparse eight-GiB arenas and persistent
+RX/RW data pools. They do not reproduce the assertion. The primary .NET
+10.0.13 source is a control/reference; the actual application's 10.0.12-dev
+NativeAOT build and allocation schedule are not established by it.
 
 The repeated DXVK `Cannot relocate image` messages were also checked with
 an independent shader-draw/shared-copy probe using the same D3D11 revision.
@@ -67,6 +85,11 @@ flight, long-session stability, individual display/mode coverage, Steam and
 MSFS 2020/GE behavior, other runners in a real v3 cockpit, NVIDIA and weather
 radar remain unverified. The short display confirmation does not close the
 reported freeze/stall issue.
+
+The release is experimental and the draft PR remains open. Flightdeck uses
+its own pinned patch manifest; this download does not change its automatic
+patch selection. No general startup or long-flight stability guarantee follows
+from the bounded successful repeats.
 
 The bounded SIP output representation is not fully compared with native
 Windows, and NCrypt support covers only the documented subset linked above.

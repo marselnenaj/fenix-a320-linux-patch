@@ -10,11 +10,13 @@ This packages the Wine fixes tested with Fenix **2.4.0.4720**, MSFS 2024
 FCU and radio display rendering were checked in a running cockpit. A complete
 flight has not been independently validated.
 
-The **unreleased preview.10 candidate** also installs Fenix **3.0.0.7454**
+The **experimental preview.10** also installs Fenix **3.0.0.7454**
 with official Installer **1.0.359**, completes login/System startup and has
 user-confirmed working cockpit displays on the same Xodus/MSFS 2024 setup.
-One startup hit a Wine memory-view assertion; later starts did not reproduce
-it. Publication is held while that stability result remains unresolved.
+One startup hit a Wine memory-view assertion. A later fresh run and five
+backend restarts with the production modules did not reproduce it, but its
+cause remains unknown. Treat this as a test release; full-flight stability
+is unverified.
 See [v3 validation and limits](docs/fenix-v3.md).
 
 **Preview.9** fixes a Direct2D geometry memory leak on all four runners and
@@ -24,7 +26,7 @@ prerequisite. The setup now explicitly asks you to install the A320 inside the
 official installer before
 closing it. See [the changes and validation](docs/release-notes.md).
 
-The v3 candidate includes [WinRT storage](docs/winrt-storage.md),
+The v3 fixes include [WinRT storage](docs/winrt-storage.md),
 [PE image digests](docs/pe-indirect-data.md),
 [volume paths](docs/volume-device-paths.md),
 [PBKDF2](docs/pbkdf2-pseudo-handle.md), [ephemeral ECDH](docs/ncrypt-ecdh.md)
@@ -79,6 +81,9 @@ through the same steps: install the patch, run the official Fenix Installer
 from your [Fenix account](https://fenixsim.com/dashboard/), open Fenix and sign
 in, apply the settings (the supported display renderer and Legacy readouts). Login and activation
 remain in the official Fenix software.
+
+Flightdeck selects its patch through a separate pinned manifest. Publishing
+this experimental preview does not update that pin automatically.
 
 `./install.sh` from this ZIP does not install into a runtime of current
 Flightdeck: it only replaces launch scripts it knows, those of Flightdeck's

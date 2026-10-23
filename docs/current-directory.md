@@ -1,6 +1,6 @@
 # GLOBALROOT current-directory conversion
 
-This **local, unreleased** change corrects an absolute working-directory
+This experimental preview.10 change corrects an absolute working-directory
 defect in the pinned x64 Wine runners. Opening a GLOBALROOT directory could
 succeed while `RtlSetCurrentDirectory_U` stored bare
 `GLOBALROOT\Device\HarddiskVolumeN\...` as a relative current directory.
@@ -71,4 +71,6 @@ An unchanged production repeat ran for about five minutes without that
 assertion. A later run with address-only Unix NTDLL logging also avoided it,
 and the tester confirmed working displays before closing MSFS. The diagnostic
 logging is excluded from the payload. Stable v3 operation and a full flight
-remain unverified; see [the complete v3 result](fenix-v3.md).
+remain unverified. A later fresh production run and five warm backend
+restarts also avoided the assertion, with user-confirmed displays on the
+fresh run; see [the complete v3 result](fenix-v3.md).

@@ -1,6 +1,6 @@
 # PBKDF2 pseudo-handle compatibility
 
-This local candidate adds the missing PBKDF2 predefined-handle entry to each
+This preview.10 change adds the missing PBKDF2 predefined-handle entry to each
 pinned Wine runner's `bcrypt.dll`. Microsoft documents
 [`BCRYPT_PBKDF2_ALG_HANDLE` as `0x331`](https://learn.microsoft.com/en-us/windows/win32/seccng/cng-algorithm-pseudo-handles).
 Wine already implements PBKDF2 through an opened provider, but the pinned

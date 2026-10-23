@@ -1,6 +1,6 @@
 # Bounded PE indirect data
 
-This **local, unreleased** change implements the PE image-digest route of
+This experimental preview.10 change implements the PE image-digest route of
 `CryptSIPCreateIndirectData`, which the pinned Wine Wintrust module leaves as
 a stub. It is not a complete native SIP implementation.
 

@@ -1,6 +1,6 @@
 # Ephemeral NCrypt ECDH compatibility
 
-This is a **local, unreleased** compatibility change as of 23 October 2026.
+This is an experimental preview.10 compatibility change, tested on 23 October 2026.
 The pinned Wine provider returns `NTE_NOT_SUPPORTED` for unnamed
 `ECDH_P256` creation. An isolated Fenix 3.0.0.7454 retry with the diagnostic
 Xodus modules completed Systems link setup in 8,894 ms, kept FenixSystem

@@ -1,6 +1,6 @@
 # NT volume device paths
 
-This local compatibility candidate fixes the x64 Unix `ntdll.so` in each
+This experimental preview.10 change fixes the x64 Unix `ntdll.so` in each
 pinned runner. A path obtained with
 `GetFinalPathNameByHandleW(..., VOLUME_NAME_NT)` identifies its real NT volume,
 for example `\Device\HarddiskVolumeN\folder\file.exe`. Applications can reopen

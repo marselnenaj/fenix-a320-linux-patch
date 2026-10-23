@@ -45,15 +45,19 @@ Anforderungen unterscheiden sich je nach Version: Der geprüfte offizielle
 Installer 1.0.359 verwendet .NET 8 und deklariert .NET 8 in seinem eigenen Bootstrap.
 Ein vollständiger v3-Flug wurde noch nicht unabhängig geprüft.
 
-Der **noch unveröffentlichte Kandidat für preview.10** behebt zusätzlich die
+Die **experimentelle preview.10** behebt zusätzlich die
 WinRT-, Signaturdaten-, Pfad- und Kryptografiefehler beim Start von Fenix
 **3.0.0.7454**. Der offizielle Installer **1.0.359** hat die Installation
 abgeschlossen; Anmeldung, Systemstart und funktionierende Cockpit-Anzeigen
 wurden mit Xodus/MSFS 2024 geprüft. Ein Start traf eine Wine-Speicherassertion,
-die bei späteren Starts nicht erneut auftrat. Die Veröffentlichung bleibt
-deshalb vorerst zurückgestellt. Vollständige Flüge, Steam/MSFS 2020 und echte
+die bei einem späteren frischen Lauf und fünf Fenix-Neustarts mit den
+Produktionsmodulen nicht erneut auftrat. Ihre Ursache bleibt ungeklärt;
+dies ist ein Testrelease. Vollständige Flüge, Steam/MSFS 2020 und echte
 v3-Cockpit-Tests mit den anderen Runnern fehlen weiterhin. Siehe
 [v3-Prüfstand und Grenzen](fenix-v3.md).
+
+Flightdeck legt seine Patch-Version in einem eigenen Manifest fest. Dieser
+experimentelle Release aktualisiert diese Zuordnung nicht automatisch.
 
 Der Installer legt das eigene Proton an, weil Steam Proton Experimental laufend
 aktualisiert und die Korrekturen zu genau einem Wine-Stand gehören. Andere

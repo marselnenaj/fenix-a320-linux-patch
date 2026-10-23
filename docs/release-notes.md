@@ -1,9 +1,10 @@
-# 0.1.0-preview.10 — unreleased candidate, 23 October 2026
+# 0.1.0-preview.10 — experimental, 23 October 2026
 
-This candidate reaches user-confirmed cockpit displays with Fenix
+This test release reaches user-confirmed cockpit displays with Fenix
 **3.0.0.7454**, official Installer **1.0.359**, MSFS 2024 **1.8.16.0** and
-Xodus **11.0 / 7c0b4354**. Publication is held: one startup hit Wine's
-`create_view` assertion after System boot; later starts did not reproduce it.
+Xodus **11.0 / 7c0b4354**. **Known issue:** one startup hit Wine's
+`create_view` assertion after System boot. A later fresh production run and
+five warm backend restarts did not reproduce it; its cause remains unknown.
 No full flight or MSFS 2020/GE regression check has been completed.
 See [the test sequence and limits](fenix-v3.md).
 
@@ -27,6 +28,8 @@ See [the test sequence and limits](fenix-v3.md).
 
 The vendor executables and their authentication remain unchanged. Diagnostic
 memory logging, APC and KernelBase experiments are excluded from the payload.
+The issue and draft PR remain open for stability investigation. Flightdeck's
+separate patch pin is not updated by publishing this experimental release.
 
 # 0.1.0-preview.9 — 22 October 2026
 

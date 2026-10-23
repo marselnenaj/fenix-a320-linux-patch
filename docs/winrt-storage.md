@@ -1,6 +1,6 @@
 # Unpackaged WinRT storage
 
-This local compatibility candidate changes Wine's
+This compatibility change in experimental preview.10 changes Wine's
 `windows.storage.applicationdata.dll`. An ordinary desktop process without a
 Windows package identity must receive `0x80073d54`
 (`HRESULT_FROM_WIN32(APPMODEL_ERROR_NO_PACKAGE)`) from
@@ -64,4 +64,4 @@ copies of the corresponding pinned Wine sources; the original sources and
 runners remained unchanged. The normal build now includes the module in each
 overlay, with original-runner and candidate-payload hashes in `bundle.json`.
 Preview.9's file sets are retained as previous-release snapshots for an
-in-place upgrade. This change is part of the unreleased preview.10 candidate.
+in-place upgrade. This change is included in experimental preview.10.

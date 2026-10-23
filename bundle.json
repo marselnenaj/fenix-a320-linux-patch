@@ -178,13 +178,26 @@
       "official_installer": "1.0.359",
       "aircraft_installation_completed": true,
       "login_and_system_startup": true,
-      "cockpit_displays": "User confirmed after cwd fix with address-only Unix ntdll logging; diagnostic module excluded from payload",
+      "cockpit_displays": "User confirmed on fresh diagnostic-free production run after cwd fix",
       "production_repeat_minutes_without_assertion": 5,
       "startup_memory_view_assertion_observed": true,
       "assertion_cause_known": false,
       "full_flight": false,
       "real_cockpit_runner": "xodus",
-      "validation": "docs/fenix-v3.md"
+      "validation": "docs/fenix-v3.md",
+      "production_start_checks": {
+        "fresh_simulator_launches": 1,
+        "warm_backend_restarts": 5,
+        "all_components_connected": true,
+        "minimum_seconds_after_warm_connection": 60,
+        "assertion_reproduced": false
+      },
+      "additional_native_vm_controls": {
+        "gc_lifecycle_checks": 6465,
+        "sparse_concurrent_checks": 4815,
+        "assertion_reproduced": false
+      },
+      "release_channel": "experimental; unresolved prior startup memory-view assertion"
     }
   },
   "accepted_scripts": {
