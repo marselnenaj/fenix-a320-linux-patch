@@ -2,6 +2,7 @@
 //! Native replacements for the historical Python launch helpers.
 pub mod display;
 pub mod launch;
+pub mod memory;
 use crate::{Error, Result};
 use serde_json::Value;
 use std::{

@@ -17,7 +17,7 @@ use std::{
     },
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
-    sync::atomic::{AtomicBool, Ordering},
+    sync::atomic::{AtomicBool, AtomicUsize, Ordering},
     time::{Duration, Instant},
 };
 fn nt(path: &Path) -> Result<String> {
@@ -234,7 +234,12 @@ impl Drop for Helper {
         let _ = self.0.wait();
     }
 }
-pub fn wine(root: &Path, args: &[OsString], cancel: &AtomicBool) -> Result<i32> {
+pub fn wine(
+    root: &Path,
+    args: &[OsString],
+    cancel: &AtomicBool,
+    last_signal: &AtomicUsize,
+) -> Result<i32> {
     let root = root.canonicalize()?;
     let (game, _) = configuration(&root)?;
     let (directory, executable) = game_paths(&game);
@@ -389,7 +394,14 @@ pub fn wine(root: &Path, args: &[OsString], cancel: &AtomicBool) -> Result<i32> 
         }
         if !forwarded && cancel.load(Ordering::Relaxed) {
             if let Some(pid) = rustix::process::Pid::from_raw(child.0.id() as i32) {
-                let _ = rustix::process::kill_process(pid, rustix::process::Signal::TERM);
+                let signal = if last_signal.load(Ordering::Relaxed)
+                    == signal_hook::consts::SIGINT as usize
+                {
+                    rustix::process::Signal::INT
+                } else {
+                    rustix::process::Signal::TERM
+                };
+                let _ = rustix::process::kill_process(pid, signal);
             }
             forwarded = true;
         }

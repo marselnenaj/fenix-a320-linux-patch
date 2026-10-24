@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 //! Aggregate counters only: never read process arguments, environment or memory.
-use fenix_patch::{Error, Result, py};
+use crate::{Error, Result, py};
 use std::{
     collections::BTreeMap,
     fs::{self, OpenOptions},
@@ -30,6 +30,15 @@ fn identity(proc: &Path) -> Result<String> {
         .ok_or_else(|| Error::other("Invalid process identity"))
 }
 pub fn run(pid: u32, output: &Path, interval: f64, samples: u32) -> Result<()> {
+    sample(pid, output, interval, samples, || false)
+}
+pub fn sample(
+    pid: u32,
+    output: &Path,
+    interval: f64,
+    samples: u32,
+    stopped: impl Fn() -> bool,
+) -> Result<()> {
     if pid == 0 || samples == 0 || !interval.is_finite() || interval <= 0.0 || interval > 86_400.0 {
         return Err(Error::other(
             "PID, interval and sample count must be positive finite values; interval must not exceed one day",
@@ -47,6 +56,9 @@ pub fn run(pid: u32, output: &Path, interval: f64, samples: u32) -> Result<()> {
     )?;
     let started = Instant::now();
     for sample in 0..samples {
+        if stopped() {
+            return Err(Error::Interrupted);
+        }
         if identity(&proc)? != initial {
             return Err(Error::other(
                 "PID was reused; sampling stopped. Partial CSV retained.",
@@ -90,10 +102,17 @@ pub fn run(pid: u32, output: &Path, interval: f64, samples: u32) -> Result<()> {
         writeln!(file)?;
         file.flush()?;
         if sample + 1 < samples {
-            std::thread::sleep(
-                Duration::from_secs_f64(f64::from(sample + 1) * interval)
-                    .saturating_sub(started.elapsed()),
-            );
+            let deadline = Duration::from_secs_f64(f64::from(sample + 1) * interval);
+            while started.elapsed() < deadline {
+                if stopped() {
+                    return Err(Error::Interrupted);
+                }
+                std::thread::sleep(
+                    deadline
+                        .saturating_sub(started.elapsed())
+                        .min(Duration::from_millis(100)),
+                );
+            }
         }
     }
     println!("Wrote {samples} aggregate samples to {}", output.display());
@@ -119,5 +138,17 @@ mod tests {
         fs::write(&file, b"keep").expect("output");
         assert!(run(std::process::id(), &file, 1.0, 1).is_err());
         assert_eq!(fs::read(file).expect("retained"), b"keep");
+    }
+    #[test]
+    fn cancellation_keeps_a_partial_csv() {
+        let temp = tempfile::tempdir().expect("fixture");
+        let file = temp.path().join("partial.csv");
+        assert_eq!(
+            sample(std::process::id(), &file, 60.0, 2, || true),
+            Err(Error::Interrupted)
+        );
+        let csv = fs::read_to_string(file).expect("partial CSV");
+        assert_eq!(csv.lines().count(), 1);
+        assert!(csv.starts_with("timestamp_utc,"));
     }
 }

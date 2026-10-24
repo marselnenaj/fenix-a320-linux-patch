@@ -116,7 +116,9 @@ fn execute(ctx: &Context<'_>, command: Command) -> Result<()> {
             output,
             interval,
             samples,
-        } => crate::memory::run(pid, &output, interval, samples),
+        } => crate::memory::sample(pid, &output, interval, samples, || {
+            ctx.system.interrupted().is_err()
+        }),
         Command::Build {
             prepare_only,
             build_dir,

@@ -13,12 +13,15 @@ The shipped ELF modules require glibc 2.38 or newer. An older-distribution build
 must be tested and published as a separately pinned artifact.
 
 ```sh
-cargo run --locked -p fenix-tools -- build --build-dir build/release --record-build
-cargo test --locked --workspace
-cargo run --locked -p fenix-tools -- smoke --runner /path/to/pinned-runner --work build/release-smoke
+# Build the two static Linux programs first.
+mkdir -p build/installer
 docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/src:ro -v "$PWD/build/installer":/out \
   -e CARGO_TARGET_DIR=/out/target -e CARGO_HOME=/out/cargo -e HOME=/out -w /src \
   rust:1.98-alpine cargo build --release --locked -p fenix-patch --bins
+cp build/installer/target/release/fenix-runtime integration/fenix-runtime
+cargo run --locked -p fenix-tools -- build --build-dir build/release --record-build
+cargo test --locked --workspace
+cargo run --locked -p fenix-tools -- smoke --runner /path/to/pinned-runner --work build/release-smoke
 cargo run --locked -p fenix-tools -- release --installer build/installer/target/release/fenix-patch
 ```
 

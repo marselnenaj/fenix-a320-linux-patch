@@ -14,7 +14,7 @@ pub mod build;
 pub mod cli;
 pub mod elf;
 pub mod licenses;
-pub mod memory;
+pub use fenix_patch::runtime::memory;
 pub mod proton;
 pub mod release;
 pub mod smoke;

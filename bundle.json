@@ -226,7 +226,7 @@
     "xodus-wine-launch": "b9ef538cf83ead2dc5485b835f6b1b795219879888333fc2f886c4dfcc84ee33",
     "FenixGeometrySetup.exe": "b996c9f8f26ca52edbe5e8e2ae0bc4f1d0d031eec50d8e1927bca351df855324",
     "FenixMCDURefresh.exe": "1dfa0662c83e568007c12e15131ec58c176a9c79ff17a94004b27b2ed1494154",
-    "fenix-runtime": "139416b962f70cd494997b80c6c3d477f0df9d072efd930cf8241f4dbc89f8c7"
+    "fenix-runtime": "1b1a11987ddc15c6ef7862e9dd096c62c3d079c27738101a298a73d0acee8ee0"
   },
   "previous_releases": {
     "0.1.0-preview.1": {
@@ -558,7 +558,7 @@
     "drive_c/windows/system32/d2d1_geometry.dll": "663f1d59ec1c014b9ea47a6cef71b3d43579e9759a82f3ee2cbd80b8c6d9e85f",
     "drive_c/windows/system32/FenixWindowGuard.exe": "2e3814496b8a539cac4e1b0f2cba5c8eb9e7d2bdc6b73df87aab6019164c4af3",
     "drive_c/windows/system32/FenixMCDURefresh.exe": "1dfa0662c83e568007c12e15131ec58c176a9c79ff17a94004b27b2ed1494154",
-    "drive_c/windows/system32/fenix-runtime": "139416b962f70cd494997b80c6c3d477f0df9d072efd930cf8241f4dbc89f8c7"
+    "drive_c/windows/system32/fenix-runtime": "1b1a11987ddc15c6ef7862e9dd096c62c3d079c27738101a298a73d0acee8ee0"
   },
   "variants": {
     "experimental-11": {
