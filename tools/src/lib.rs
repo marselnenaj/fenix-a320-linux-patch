@@ -14,9 +14,11 @@ pub mod build;
 pub mod cli;
 pub mod elf;
 pub mod licenses;
+pub mod memory;
 pub mod proton;
 pub mod release;
 pub mod smoke;
+pub mod source_inputs;
 pub mod util;
 pub mod x11;
 

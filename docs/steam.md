@@ -2,10 +2,11 @@
 
 The standalone installer can patch the Steam editions directly; Flightdeck is
 not required. **The maintainer has not run this path with a real Steam
-simulator.** One user confirmed MSFS 2024 with working Fenix displays on the
-`cachyos-11` base. The installer, Proton tool and Windows profile handling were
-verified in a reproduced Steam library with the pinned Proton, and the patched
-runner starts inside Steam's runtime container. MSFS 2020 with Fenix is untested.
+simulator.** User reports cover working displays on Steam MSFS 2024 with the
+`cachyos-11` base and, after preview.11's Gateway correction, Steam MSFS 2020
+with Fenix 3.0.0.7454 on CachyOS 11 / NVIDIA-PRIME. The installer, Proton tool
+and Windows profile handling were checked in a reproduced Steam library.
+These observations do not establish complete-flight stability.
 
 ## Why a separate Proton
 

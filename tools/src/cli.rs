@@ -20,6 +20,24 @@ pub struct Args {
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
+    /// Restore only pinned DXVK sources from a previous corresponding-source archive
+    SourceInputs {
+        #[arg(long)]
+        archive: PathBuf,
+        #[arg(long)]
+        release: String,
+    },
+    /// Sample only aggregate Linux memory counters of one explicitly selected PID
+    SampleSystemMemory {
+        #[arg(long)]
+        pid: u32,
+        #[arg(long)]
+        output: PathBuf,
+        #[arg(long, default_value_t = 15.0)]
+        interval: f64,
+        #[arg(long, default_value_t = 120)]
+        samples: u32,
+    },
     /// Rebuild the Wine modules from the exact archived sources and patches
     Build {
         #[arg(long)]
@@ -90,6 +108,15 @@ fn jobs() -> i64 {
 
 fn execute(ctx: &Context<'_>, command: Command) -> Result<()> {
     match command {
+        Command::SourceInputs { archive, release } => {
+            crate::source_inputs::restore(ctx, &archive, &release)
+        }
+        Command::SampleSystemMemory {
+            pid,
+            output,
+            interval,
+            samples,
+        } => crate::memory::run(pid, &output, interval, samples),
         Command::Build {
             prepare_only,
             build_dir,

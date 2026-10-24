@@ -18,7 +18,7 @@ cargo test --locked --workspace
 cargo run --locked -p fenix-tools -- smoke --runner /path/to/pinned-runner --work build/release-smoke
 docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/src:ro -v "$PWD/build/installer":/out \
   -e CARGO_TARGET_DIR=/out/target -e CARGO_HOME=/out/cargo -e HOME=/out -w /src \
-  rust:1.98-alpine cargo build --release --locked -p fenix-patch --bin fenix-patch
+  rust:1.98-alpine cargo build --release --locked -p fenix-patch --bins
 cargo run --locked -p fenix-tools -- release --installer build/installer/target/release/fenix-patch
 ```
 
@@ -30,12 +30,20 @@ musl. `release` refuses an installer that is not statically linked or reports
 another version than `bundle.json`. `./install.sh` in a source checkout builds
 and runs the installer with the host toolchain instead.
 
-Three files under `integration/` are Python or contain it:
-`fenix-display-refresh.py`, `xodus-wine-launch` and `launch-msfs.sh`. They are
-the launch scripts of Flightdeck's Python releases (0.1.x) with the Fenix
-additions, shipped unchanged and pinned by hash in `bundle.json`; the installer
-only copies them. `tests/test_display_refresh.py` checks the first of them and
-needs that launcher's interpreter. Nothing else in this project is Python.
+The installer, Linux launch/display helpers and maintainer tools are Rust.
+Build both static programs with `--bins`, then copy the resulting
+`fenix-runtime` into `integration/fenix-runtime` **before** recording payload
+hashes with `build --record-build`. The two integration scripts are shell
+entry points only; their former Python logic lives in `installer/src/runtime/`.
+The optional aggregate-memory sampler is `fenix-tools sample-system-memory`.
+Wine/DXVK patches and the small Windows ABI helpers retain their native C/C++
+implementation. Wine's upstream build still uses its own Python/Perl tools.
+
+For the static build above, use `cargo build --release --locked -p fenix-patch
+--bins` in the Alpine container and copy `/out/target/release/fenix-runtime`
+from the mounted output to `integration/fenix-runtime`. Run this before the
+Wine-module build when starting from a source checkout. The release archive
+includes all Rust sources, dependency notices and unchanged Wine/DXVK sources.
 
 Use a fresh `--build-dir`; existing build trees are never overwritten. `--prepare-only` verifies and applies all patches
 without compiling. The build verifies the Wine and xgameruntime source archives, populates the

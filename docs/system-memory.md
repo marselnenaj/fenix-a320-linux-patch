@@ -211,13 +211,13 @@ working patch in place; a further flight is not required merely to repeat them.
 For a separate comparison, record version/settings and start, aircraft reload
 and simulator exit times, using a new output filename for each process.
 
-The optional Python 3 helper
-[sample-system-memory.py](../tools/sample-system-memory.py) reads only selected
+The optional Rust command
+[`fenix-tools sample-system-memory`](../tools/src/memory.rs) reads only selected
 aggregate counters from `/proc/<pid>/status` and `smaps_rollup`. Select the
 Linux PID of the intended `FenixSystem.exe` process, then run:
 
 ```sh
-python3 tools/sample-system-memory.py --pid 12345 \
+cargo run --locked -p fenix-tools -- sample-system-memory --pid 12345 \
   --interval 15 --samples 120 --output fenix-system-memory.csv
 ```
 

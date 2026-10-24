@@ -632,7 +632,7 @@ const INTEGRATION: [&str; 6] = [
     "xodus-wine-launch",
     "FenixGeometrySetup.exe",
     "FenixMCDURefresh.exe",
-    "fenix-display-refresh.py",
+    "fenix-runtime",
 ];
 
 const PROBES: [&str; 17] = [
@@ -739,10 +739,7 @@ impl Tree {
             ("integration/FenixWindowGuard.exe", "MZ guard\n"),
             ("integration/FenixGeometrySetup.exe", "MZ geometry\n"),
             ("integration/FenixMCDURefresh.exe", "MZ mcdu\n"),
-            (
-                "integration/fenix-display-refresh.py",
-                "#!/usr/bin/env python3\n",
-            ),
+            ("integration/fenix-runtime", "#!/usr/bin/env python3\n"),
         ] {
             put(&root.join(name), content);
         }

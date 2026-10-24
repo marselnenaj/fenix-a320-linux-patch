@@ -86,7 +86,7 @@ fn stem() -> String {
 }
 
 /// The source files of the synthetic repository, as they are named in a release.
-const SOURCE: [&str; 52] = [
+const SOURCE: [&str; 51] = [
     ".github/workflows/ci.yml",
     ".gitignore",
     "BUILDING.md",
@@ -102,7 +102,6 @@ const SOURCE: [&str; 52] = [
     "install.sh",
     "installer/Cargo.toml",
     "installer/src/main.rs",
-    "integration/fenix-display-refresh.py",
     "integration/launch-msfs.sh",
     "integration/xodus-wine-launch",
     "licenses/LGPL-2.1.txt",
@@ -453,6 +452,7 @@ fn both_archives_hold_the_allowlisted_files_in_a_fixed_form() {
         "FenixWindowGuard.exe",
         "FenixGeometrySetup.exe",
         "FenixMCDURefresh.exe",
+        "fenix-runtime",
     ] {
         expected.push(format!("{}/integration/{name}", stem()));
     }
@@ -501,8 +501,8 @@ fn both_archives_hold_the_allowlisted_files_in_a_fixed_form() {
         )
     );
     let update = fenix_patch::json::loads(&read(&out.join("flightdeck-update.json"))).unwrap();
-    assert_eq!(update["installer_contract"], json!(1));
-    assert_eq!(update["minimum_flightdeck_version"], json!("0.2.20"));
+    assert_eq!(update["installer_contract"], json!(2));
+    assert_eq!(update["minimum_flightdeck_version"], json!("0.2.22"));
     assert_eq!(update["release"]["sha256"], json!(digest(&binary_path)));
     assert_eq!(
         update["release"]["size"],
@@ -987,7 +987,7 @@ fn the_repository_itself_passes_the_source_checks() {
             "tools/src/release.rs",
             "tools/tests/common/mod.rs",
             "patches/proton/cachyos-11.patch",
-            "integration/fenix-display-refresh.py",
+            "installer/src/runtime/display.rs",
             ".github/workflows/checks.yml",
         ] {
             assert!(names.iter().any(|name| name == expected), "{expected}");

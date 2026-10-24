@@ -162,7 +162,7 @@ pub fn sources(root: &Path, lock: &Value) -> Result<Vec<PathBuf>> {
         }
     }
     for name in lock.need_table("integration")?.keys() {
-        if !name.ends_with(".exe") {
+        if !name.ends_with(".exe") && name != "fenix-runtime" {
             allowed.push(root.join("integration").join(name));
         }
     }
@@ -403,7 +403,7 @@ pub fn run(ctx: &Context<'_>, options: &Options) -> Result<()> {
         }
     }
     for name in lock.need_table("integration")?.keys() {
-        if name.ends_with(".exe") {
+        if name.ends_with(".exe") || name == "fenix-runtime" {
             binary.push(Member::own(root, &root.join("integration").join(name))?);
         }
     }
@@ -444,8 +444,8 @@ pub fn run(ctx: &Context<'_>, options: &Options) -> Result<()> {
     update_release["size"] = json!(fsx::stat(&binary_path)?.size());
     let update = json!({
         "format": 1,
-        "installer_contract": 1,
-        "minimum_flightdeck_version": "0.2.20",
+        "installer_contract": 2,
+        "minimum_flightdeck_version": "0.2.22",
         "release": update_release,
         "bundle": lock,
     });

@@ -315,13 +315,13 @@ fn a_whole_build_runs_the_commands_of_the_script_in_order() {
             "drive_c/windows/system32/d2d1_geometry.dll",
             "drive_c/windows/system32/FenixWindowGuard.exe",
             "drive_c/windows/system32/FenixMCDURefresh.exe",
-            "drive_c/windows/system32/fenix-display-refresh.py",
+            "drive_c/windows/system32/fenix-runtime",
         ]
     );
     for name in [
         "FenixWindowGuard.exe",
         "FenixMCDURefresh.exe",
-        "fenix-display-refresh.py",
+        "fenix-runtime",
     ] {
         assert_eq!(
             after["prefix_files"][format!("drive_c/windows/system32/{name}")],

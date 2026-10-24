@@ -22,25 +22,30 @@ für dessen Xbox-PC-Versionen oder den separaten Installer für
 **Steam-MSFS 2020 und 2024**. Installation, Anmeldung und Aktivierung erfolgen
 mit der offiziellen Fenix-Software.
 
-**Aktuell veröffentlicht: [0.1.0-preview.11](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.0-preview.11).**
-Eine reguläre Version **0.1.0** wird vorbereitet und ist noch nicht veröffentlicht.
+**Erstes reguläres Release: [0.1.0](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.0).**
+Installer und Linux-Start-/Display-Helfer sind eigenständige Rust-Programme
+und benötigen keine Python-Laufzeit.
 
-**Neu in preview.11:** Korrektur der Gateway-DLL-Namen für Fenix v3, mit
-passenden NTDLL-Builds für alle vier Runner. Auf dem betroffenen NVIDIA-System
-funktionieren laut Rückmeldung auch die GPU-Displays mit **USE DISPLAY SAFE MODE aus**.
-Die Direct2D-Speicherkorrektur und die Anpassungen für Installer 1.0.359 bleiben enthalten.
-[Kompatibilität](#kompatibilität) · [Release-Vorbereitung](release-readiness.md)
+**Neu in 0.1.0:** Die übrigen Linux-Python-Helfer und das Diagnosewerkzeug
+wurden durch Rust ersetzt. Verifizierte Upgrade-Pfade von preview.11 und eine
+passende Flightdeck-Updatebeschreibung sind enthalten. Wine-/DXVK-Dateien,
+Gateway-Korrektur und Display-Einstellungen aus preview.11 bleiben erhalten.
+Die experimentelle Simulator-Kompatibilität und das bekannte System-Speicherproblem
+sind weiterhin dokumentiert. [Prüfumfang](release-readiness.md).
 
 ## Loslegen
 
 ### Mit Flightdeck
 
-1. Auf **Flightdeck 0.2.20 oder neuer** aktualisieren; MSFS und Fenix schließen.
+1. Auf **Flightdeck 0.2.22 oder neuer** aktualisieren; MSFS und Fenix schließen.
 2. **Mods → Fenix A320** öffnen und dem hervorgehobenen Einrichtungsschritt folgen.
 3. Den offiziellen Installer aus deinem [Fenix-Konto](https://fenixsim.com/dashboard/)
    starten. Anmelden, den A320 für deinen Simulator installieren und den Abschluss abwarten.
 4. Fenix öffnen, anmelden und die Anzeigeeinstellungen anwenden.
    Danach MSFS über Flightdeck starten.
+
+Das native Helferformat in 0.1.0 benötigt Flightdeck 0.2.22. Bei 0.2.20 oder
+0.2.21 zuerst den Launcher aktualisieren.
 
 Flightdeck 0.2.20 und neuer suchen automatisch nach kompatiblen Patch-Releases
 und installieren sie vor dem nächsten MSFS- oder Fenix-Start, während beide
@@ -52,7 +57,7 @@ bleiben erhalten.
 
 1. MSFS einmal über Steam starten und wieder schließen.
 2. Das **Linux-Installer-ZIP** aus dem
-   [preview.11-Release](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.0-preview.11)
+   [0.1.0-Release](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.0)
    herunterladen und entpacken.
 3. **Fenix A320 Linux Patch** öffnen oder `./install.sh` starten.
 4. Durch die Einrichtung führen lassen: Patch installieren,

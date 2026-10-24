@@ -270,7 +270,9 @@ pub fn runtime_path(system: &dyn System, value: &OsStr, recovery: bool) -> Resul
         .get("game_id")
         .is_some_and(|game| game.as_str() != Some("msfs2024"))
     {
-        return Err(Error::patch("This preview supports MSFS 2024 only."));
+        return Err(Error::patch(
+            "Standalone Flightdeck runtime mode supports MSFS 2024 only.",
+        ));
     }
     let mut required = vec!["private", "tools", "local"];
     if !recovery {
@@ -594,7 +596,7 @@ pub fn apply_overlay(
     for name in [
         "FenixWindowGuard.exe",
         "FenixMCDURefresh.exe",
-        "fenix-display-refresh.py",
+        "fenix-runtime",
     ] {
         if let Some(sha) = integration.get(name) {
             let data = fsx::read(regular(&bundle.join("integration").join(name), None)?)?;
@@ -606,7 +608,11 @@ pub fn apply_overlay(
             atomic(
                 &contained(prefix, format!("drive_c/windows/system32/{name}"))?,
                 &data,
-                0o644,
+                if name == "fenix-runtime" {
+                    0o755
+                } else {
+                    0o644
+                },
             )?;
         }
     }

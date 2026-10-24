@@ -15,6 +15,7 @@ pub mod guide;
 pub mod json;
 pub mod process;
 pub mod py;
+pub mod runtime;
 pub mod steam;
 pub mod system;
 pub mod targets;

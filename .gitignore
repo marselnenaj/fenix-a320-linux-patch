@@ -5,6 +5,7 @@ __pycache__/
 /build/
 /dist/
 /integration/*.exe
+/integration/fenix-runtime
 *.egg-info/
 target/
 /.fenix-patch-dev

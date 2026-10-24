@@ -106,7 +106,7 @@ impl Fixture {
             "synthetic refresh helper",
         );
         put(
-            &bundle.join("integration/fenix-display-refresh.py"),
+            &bundle.join("integration/fenix-runtime"),
             "synthetic refresh supervisor",
         );
         let mut integration: Vec<String> = fs::read_dir(bundle.join("integration"))
@@ -233,10 +233,7 @@ fn install_is_isolated_idempotent_and_restorable() {
         "synthetic refresh helper"
     );
     assert_eq!(
-        read(
-            &fx.prefix
-                .join("drive_c/windows/system32/fenix-display-refresh.py")
-        ),
+        read(&fx.prefix.join("drive_c/windows/system32/fenix-runtime")),
         "synthetic refresh supervisor"
     );
     assert_eq!(

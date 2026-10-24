@@ -101,7 +101,7 @@ function render() {
     $("steps").replaceChildren(); $("footer").replaceChildren(el("button", {onclick: quit}, "Close installer"));
     return;
   }
-  $("sub").textContent = view.title + " · community preview";
+  $("sub").textContent = view.title + " · community patch";
   $("chooser").hidden = state.targets.length < 2;
   const select = $("target");
   if (select.options.length !== state.targets.length)

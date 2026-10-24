@@ -42,7 +42,8 @@ and bright images at the recorded 5, 15 and 60 second observations. Only Display
 restarted. The earlier cold start and native helper-window suppression also
 passed. Fenix vendor binaries were unchanged.
 
-The supervisor and installer have 31 passing Python checks, including interrupted
+The original supervisor and installer passed 31 Python checks. Version 0.1.0
+replaces the Linux supervisor with Rust, with regression checks for interrupted
 preference restoration, wrong service ownership and cancellation. Six synthetic
 native endpoint scenarios cover maximum, near-maximum, mixed and low brightness,
 a held pilot button and refused input. Brightness and button-release state were

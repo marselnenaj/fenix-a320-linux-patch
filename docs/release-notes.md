@@ -1,11 +1,22 @@
-# 0.1.0 — in preparation, not published
+# 0.1.0 — first regular release
 
-The regular release remains an unpublished draft. Refresh its retained
-archives with the preview.11 Gateway correction before publication. The
-separate System-memory investigation [#12](system-memory.md), full-flight v3
-qualification and the earlier Wine assertion remain open.
+- Replace the remaining Linux Python launch and display helpers with the
+  statically linked `fenix-runtime` Rust program. Keep inherited licensed image
+  descriptors, temporary view cleanup, process ownership checks, bounded
+  refresh attempts and durable display-preference recovery.
+- Replace the optional memory sampler and the CI source-archive extraction
+  with Rust maintainer commands. No Python runtime is needed by the patch's
+  installer or Linux helpers; upstream Wine build tools remain separate.
+- Retain every Wine/DXVK module and Windows helper from preview.11. Preserve
+  exact preview.11 snapshots for upgrades on all four pinned runners.
+- Require **Flightdeck 0.2.22** for installer contract 2 and the native helper
+  layout. Steam setup remains self-contained; earlier Flightdeck versions
+  require a launcher update before adopting this patch.
+- Keep the published scope experimental: FenixSystem memory growth (#12),
+  full-flight Fenix v3 stability and the earlier Wine assertion are unresolved.
+  A regular release does not establish new simulator or GPU qualification.
 
-See [release readiness](release-readiness.md).
+See [release scope and checks](release-readiness.md).
 
 # 0.1.0-preview.11 — experimental, 23 October 2026
 

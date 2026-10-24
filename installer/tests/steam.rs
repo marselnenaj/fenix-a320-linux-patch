@@ -29,7 +29,7 @@ const FILES: [&str; 2] = [
 const HELPERS: [&str; 3] = [
     "FenixWindowGuard.exe",
     "FenixMCDURefresh.exe",
-    "fenix-display-refresh.py",
+    "fenix-runtime",
 ];
 
 struct Fixture {

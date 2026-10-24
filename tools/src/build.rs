@@ -600,7 +600,7 @@ pub fn run(ctx: &Context<'_>, options: &Options) -> Result<()> {
             .ok_or_else(|| Error::other("bundle.json: prefix_files is not a JSON object"))?;
         let system32 = "drive_c/windows/system32/";
         prefix_files.insert(format!("{system32}FenixWindowGuard.exe"), guard?);
-        for name in ["FenixMCDURefresh.exe", "fenix-display-refresh.py"] {
+        for name in ["FenixMCDURefresh.exe", "fenix-runtime"] {
             prefix_files.insert(format!("{system32}{name}"), helper(name)?);
         }
         write_lock(root, lock)
