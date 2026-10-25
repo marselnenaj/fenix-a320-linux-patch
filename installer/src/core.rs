@@ -979,6 +979,33 @@ pub fn prepare_geometry(
     result.and(removed)
 }
 
+fn font_data(path: &Path) -> Result<Vec<u8>> {
+    // Public Wine fonts can link to shared runner or host files. Resolve only
+    // the read source; publication still replaces the profile entry atomically.
+    let source = fsx::resolve_strict(path)?;
+    let file = OpenOptions::new()
+        .read(true)
+        .custom_flags((rustix::fs::OFlags::NOFOLLOW | rustix::fs::OFlags::NONBLOCK).bits() as i32)
+        .open(&source)
+        .map_err(|error| Error::io_path(&error, &source))?;
+    let limit = 32 * MIB;
+    let info = file
+        .metadata()
+        .map_err(|error| Error::io_path(&error, &source))?;
+    let invalid = || Error::patch(format!("Expected a regular font file: {}", fsx::name(path)));
+    if !info.is_file() || info.len() > limit {
+        return Err(invalid());
+    }
+    let mut bytes = Vec::new();
+    file.take(limit + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| Error::io_path(&error, &source))?;
+    if bytes.len() as u64 > limit {
+        return Err(invalid());
+    }
+    Ok(bytes)
+}
+
 pub fn ensure_ui_fonts(prefix: &Path, runner: &Path, wine: &dyn Wine) -> Result<()> {
     // Chromium's Windows UI font fallback can recurse until its stack overflows
     // if Tahoma is absent from the 64-bit DirectWrite font collection. Old
@@ -1001,9 +1028,10 @@ pub fn ensure_ui_fonts(prefix: &Path, runner: &Path, wine: &dyn Wine) -> Result<
             continue;
         }
         let target = contained(prefix, format!("drive_c/windows/Fonts/{name}"))?;
-        if !fsx::exists(&target) {
-            let source = runner.join("files/share/wine/fonts").join(name);
-            atomic(&target, &fsx::read(regular(&source, None)?)?, 0o644)?;
+        if target.is_symlink() || !fsx::exists(&target) {
+            let fallback = runner.join("files/share/wine/fonts").join(name);
+            let source = if target.is_file() { &target } else { &fallback };
+            atomic(&target, &font_data(source)?, 0o644)?;
         }
         regular(&target, None)?;
         wine.run(

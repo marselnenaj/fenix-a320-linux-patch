@@ -891,6 +891,50 @@ fn ui_fonts_repair_32_bit_only_registration_and_preserve_existing_files() {
 }
 
 #[test]
+fn ui_fonts_materialize_shared_font_links_without_changing_the_source() {
+    let fx = Fixture::new();
+    let fonts = fx.prefix.join("drive_c/windows/Fonts");
+    fs::create_dir_all(&fonts).unwrap();
+    let shared = fx.base.join("shared host font.ttf");
+    put(&shared, "existing shared Tahoma");
+    symlink(&shared, fonts.join("tahoma.ttf")).unwrap();
+    symlink("missing-font.ttf", fonts.join("tahomabd.ttf")).unwrap();
+    let calls = Arc::new(WineCalls::default());
+    let wine = MockWine::new(&fx.prefix, &fx.runner, calls.clone());
+    core::ensure_ui_fonts(&fx.prefix, &fx.runner, &wine).unwrap();
+    assert_eq!(read(&fonts.join("tahoma.ttf")), "existing shared Tahoma");
+    assert_eq!(read(&fonts.join("tahomabd.ttf")), "fixture Tahoma Bold");
+    assert!(!fonts.join("tahoma.ttf").is_symlink());
+    assert!(!fonts.join("tahomabd.ttf").is_symlink());
+    assert_eq!(read(&shared), "existing shared Tahoma");
+    assert_eq!(calls.run.lock().unwrap().len(), 2);
+}
+
+#[test]
+fn ui_fonts_accept_runner_font_links_and_keep_parent_escape_checks() {
+    let fx = Fixture::new();
+    let source = fx.runner.join("files/share/wine/fonts/tahoma.ttf");
+    let shared = fx.base.join("system Tahoma.ttf");
+    put(&shared, "system Tahoma");
+    fs::remove_file(&source).unwrap();
+    symlink(&shared, &source).unwrap();
+    let calls = Arc::new(WineCalls::default());
+    let wine = MockWine::new(&fx.prefix, &fx.runner, calls.clone());
+    core::ensure_ui_fonts(&fx.prefix, &fx.runner, &wine).unwrap();
+    let fonts = fx.prefix.join("drive_c/windows/Fonts");
+    assert_eq!(read(&fonts.join("tahoma.ttf")), "system Tahoma");
+    assert!(!fonts.join("tahoma.ttf").is_symlink());
+    assert!(source.is_symlink());
+    assert_eq!(read(&shared), "system Tahoma");
+    fs::remove_dir_all(&fonts).unwrap();
+    let outside = fx.base.join("outside fonts");
+    fs::create_dir(&outside).unwrap();
+    symlink(&outside, &fonts).unwrap();
+    assert!(core::ensure_ui_fonts(&fx.prefix, &fx.runner, &wine).is_err());
+    assert!(fs::read_dir(&outside).unwrap().next().is_none());
+}
+
+#[test]
 fn ui_fonts_leave_registered_fonts_unchanged() {
     let fx = Fixture::new();
     put(

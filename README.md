@@ -21,11 +21,15 @@ integration in [Flightdeck](https://github.com/marselnenaj/flightdeck-msfs-2024-
 for its Xbox PC editions, or the standalone setup for **Steam MSFS 2020 and 2024**.
 Installation, sign-in and activation use the official Fenix software.
 
-**First regular release: [0.1.0](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.0).**
+**Latest release: [0.1.1](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.1).**
 The installer and Linux launch/display helpers are self-contained Rust programs
 and need no Python runtime.
 
-**New in 0.1.0:** Native Rust replacements for the remaining Linux Python
+**New in 0.1.1:** Repair valid or broken Tahoma font symlinks during setup while
+preserving shared font sources. If an older setup stopped at this step, use
+**Restore original profile** and retry with this installer.
+
+**Since 0.1.0:** Native Rust replacements for the remaining Linux Python
 helpers and diagnostics, verified upgrade paths from preview.11, and a matching
 Flightdeck update descriptor. All preview.11 Wine/DXVK payloads, the Gateway
 loader correction and existing display settings are retained. Experimental

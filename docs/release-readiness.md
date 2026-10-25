@@ -1,6 +1,10 @@
-# 0.1.0 release scope
+# 0.1.1 release scope
 
-This is the first regular community patch release. The installer, Linux launch
+This maintenance release fixes linked Tahoma fonts in the installer. Font
+regressions reproduce the old refusal and verify private copies with unchanged
+shared sources. The 0.1.0 native compatibility payloads are retained.
+
+The first regular release was 0.1.0. The installer, Linux launch
 and display helpers, memory sampler and maintainer tooling are Rust. Wine/DXVK
 patches and Windows ABI helpers keep their existing native implementation.
 

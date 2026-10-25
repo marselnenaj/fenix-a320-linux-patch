@@ -1,3 +1,16 @@
+# 0.1.1 — linked Wine fonts, 25 October 2026
+
+- Fix `Expected a regular file: tahoma.ttf` when a Wine profile or runner uses
+  font symlinks. Copy readable linked font contents into the selected profile
+  atomically; repair broken profile links from the runner. Preserve shared
+  source fonts, existing ordinary/custom fonts and 64-bit font registration.
+- Keep font-directory containment and bounded ordinary-file reads. Add
+  regressions for shared, runner and broken font links and parent escapes.
+- Retain the exact Wine/DXVK and Windows helper payloads from 0.1.0. Preserve
+  0.1.0 snapshots for upgrades on all four runners.
+- After an interrupted setup, use **Restore original profile**, then retry with
+  the new installer. Flightdeck users need its corresponding launcher font fix.
+
 # 0.1.0 — first regular release
 
 - Replace the remaining Linux Python launch and display helpers with the
