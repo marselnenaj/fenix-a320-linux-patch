@@ -197,6 +197,7 @@ pub struct Mock {
     pub manifest: Mutex<Manifest>,
     pub wine: Arc<WineCalls>,
     pub framework: Step,
+    pub clr_loader: Step,
     pub desktop: Step,
     pub graphics: Step,
     pub geometry: Step,
@@ -238,6 +239,7 @@ impl Mock {
             manifest: Mutex::new(manifest),
             wine: Arc::new(WineCalls::default()),
             framework: Step::default(),
+            clr_loader: Step::default(),
             desktop: Step::default(),
             graphics: Step::default(),
             geometry: Step::default(),
@@ -326,6 +328,10 @@ impl System for Mock {
         _first_version: &str,
     ) -> Result<()> {
         self.framework.call()
+    }
+
+    fn prepare_clr_loader(&self, _wine: &dyn Wine) -> Result<()> {
+        self.clr_loader.call()
     }
 
     fn graphics_and_fonts(&self, _prefix: &Path, _runner: &Path, _wine: &dyn Wine) -> Result<()> {

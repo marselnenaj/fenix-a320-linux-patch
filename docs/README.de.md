@@ -22,11 +22,20 @@ für dessen Xbox-PC-Versionen oder den separaten Installer für
 **Steam-MSFS 2020 und 2024**. Installation, Anmeldung und Aktivierung erfolgen
 mit der offiziellen Fenix-Software.
 
-**Erstes reguläres Release: [0.1.0](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.0).**
+**Aktuelles Release: [0.1.2](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.2).**
 Installer und Linux-Start-/Display-Helfer sind eigenständige Rust-Programme
 und benötigen keine Python-Laufzeit.
 
-**Neu in 0.1.0:** Die übrigen Linux-Python-Helfer und das Diagnosewerkzeug
+**Neu in 0.1.2:** Native CLR-DLLs behalten Vorrang; Wine kann auf seinen
+eingebauten Loader zurückfallen. Der alte `mscoree`-Override wird vor Einrichtung,
+Upgrade und Fenix-Start mit lokaler Sicherung repariert. Der zugehörige
+Assembly-Ladefehler aus Flightdeck-Issue #10 wurde isoliert reproduziert.
+Wine-/DXVK-Dateien bleiben unverändert.
+
+**Seit 0.1.1:** Gültige und defekte Tahoma-Schriftlinks werden bei der Einrichtung
+repariert, ohne gemeinsam verwendete Quelldateien zu verändern.
+
+**Seit 0.1.0:** Die übrigen Linux-Python-Helfer und das Diagnosewerkzeug
 wurden durch Rust ersetzt. Verifizierte Upgrade-Pfade von preview.11 und eine
 passende Flightdeck-Updatebeschreibung sind enthalten. Wine-/DXVK-Dateien,
 Gateway-Korrektur und Display-Einstellungen aus preview.11 bleiben erhalten.
@@ -37,15 +46,16 @@ sind weiterhin dokumentiert. [Prüfumfang](release-readiness.md).
 
 ### Mit Flightdeck
 
-1. Auf **Flightdeck 0.2.22 oder neuer** aktualisieren; MSFS und Fenix schließen.
+1. Auf **Flightdeck 0.3.5 oder neuer** aktualisieren; MSFS und Fenix schließen.
 2. **Mods → Fenix A320** öffnen und dem hervorgehobenen Einrichtungsschritt folgen.
 3. Den offiziellen Installer aus deinem [Fenix-Konto](https://fenixsim.com/dashboard/)
    starten. Anmelden, den A320 für deinen Simulator installieren und den Abschluss abwarten.
 4. Fenix öffnen, anmelden und die Anzeigeeinstellungen anwenden.
    Danach MSFS über Flightdeck starten.
 
-Das native Helferformat in 0.1.0 benötigt Flightdeck 0.2.22. Bei 0.2.20 oder
-0.2.21 zuerst den Launcher aktualisieren.
+Patch 0.1.2 benötigt Flightdeck 0.3.5 für die passende Loader-Reparatur. Ältere
+Launcher behalten ihren installierten Patch und verlangen zunächst das
+Launcher-Update. Das seit 0.1.0 verwendete native Helferformat bleibt Vertrag 2.
 
 Flightdeck 0.2.20 und neuer suchen automatisch nach kompatiblen Patch-Releases
 und installieren sie vor dem nächsten MSFS- oder Fenix-Start, während beide

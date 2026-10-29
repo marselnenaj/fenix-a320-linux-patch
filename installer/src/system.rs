@@ -95,6 +95,10 @@ pub trait System: AsSystem + Send + Sync {
         core::prepare_framework(self.as_system(), wine, cache, progress, first_version)
     }
 
+    fn prepare_clr_loader(&self, wine: &dyn Wine) -> Result<()> {
+        crate::clr_loader::prepare(self.as_system(), wine).map(|_| ())
+    }
+
     fn graphics_and_fonts(&self, prefix: &Path, runner: &Path, wine: &dyn Wine) -> Result<()> {
         core::graphics_and_fonts(prefix, runner, wine)
     }
