@@ -1,8 +1,9 @@
-# 0.1.1 release scope
+# 0.1.2 release scope
 
-This maintenance release fixes linked Tahoma fonts in the installer. Font
-regressions reproduce the old refusal and verify private copies with unchanged
-shared sources. The 0.1.0 native compatibility payloads are retained.
+This maintenance release repairs native-only CLR loader overrides while keeping
+native DLL priority. It includes a private backup, repeated-call checks and
+backup-failure coverage. The Wine/DXVK and Windows helper payloads from 0.1.1
+remain unchanged; only the Rust installer/runtime programs are rebuilt.
 
 The first regular release was 0.1.0. The installer, Linux launch
 and display helpers, memory sampler and maintainer tooling are Rust. Wine/DXVK
@@ -14,11 +15,12 @@ or full-flight compatibility claim.
 
 | Area | Evidence and limits |
 | --- | --- |
+| CLR loader | The unchanged Microsoft .NET 8.0.33 assembly fails with native-only mscoree and loads after the actual standalone/Flightdeck repair. Backups and repeated calls are verified; full vendor-hook execution is not claimed. |
 | Installer, upgrade and restore | Rust workspace checks cover isolated installation, preserved aircraft/settings, interrupted updates and restore. |
 | Linux image loader | Synthetic real-child checks exercise inherited licensed descriptors, native and portable views, unchanged encrypted originals and temporary-view cleanup. |
 | Display recovery | Rust checks cover both preference modes, failed probes/refresh, cancellation, journal retention, profile/PID and listener ownership. Live observations from earlier releases remain the available cockpit evidence. |
 | Corresponding sources | Release ZIP and source archive retain exact upstream sources, patches, notices and all current Rust sources. |
-| Flightdeck | Contract 2 requires 0.2.22. Earlier launchers retain their installed patch and require a launcher update. Exact prior manifests are retained for all four runners. |
+| Flightdeck | Patch 0.1.2 requires Flightdeck 0.3.5; contract 2 is unchanged. Earlier launchers retain their installed patch and require a launcher update. Exact prior manifests are retained for all four runners. |
 | Gateway/EFB | Preview.11's loader correction and the issue #7 reporter's GPU/display-safe-mode evidence are retained. [Scope](display-startup.md). |
 | FenixSystem memory | [Issue #12](system-memory.md) remains open for the signature-query ownership lead and Fenix support response. No memory fix is claimed. |
 | Fenix v3 stability | Bounded starts and cockpit displays were tested previously; full flights and the earlier Wine assertion remain unqualified. |

@@ -1,3 +1,18 @@
+# 0.1.2 — CLR loader fallback, 29 October 2026
+
+- Preserve native CLR priority with `mscoree=native,builtin`, including after
+  the Microsoft Framework installer finishes. Existing native-only settings
+  are backed up and repaired before setup, staged upgrade and Fenix app startup.
+- Keep disabled/builtin preferences, per-app overrides and DLL files intact.
+  Add idempotent migration, backup failure and ambiguous-registry regressions.
+- Retain the Wine/DXVK and Windows payloads from 0.1.1 and its exact upgrade
+  identities for all four runners. Rebuild the Rust installer/runtime programs.
+- Require Flightdeck 0.3.5 for the matching launcher-side repair. Standalone
+  Steam setup remains available independently.
+- Reproduce and repair the IL-only loader failure using Microsoft's verified
+  .NET 8.0.33 assembly in an account-free profile. This is not
+  a new full-flight, GPU or System-memory qualification.
+
 # 0.1.1 — linked Wine fonts, 25 October 2026
 
 - Fix `Expected a regular file: tahoma.ttf` when a Wine profile or runner uses

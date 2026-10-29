@@ -570,9 +570,11 @@ fn upgrade_keeps_aircraft_settings_and_original_restore_point() {
     let old_runner = fx.active_runner();
     assert_eq!(fx.snapshot()["update_available"], true);
     fx.mock.framework.reset();
+    fx.mock.clr_loader.reset();
     fx.mock.geometry.reset();
     fx.install().unwrap();
     assert_eq!(fx.mock.framework.count(), 0);
+    assert_eq!(fx.mock.clr_loader.count(), 1);
     assert_eq!(fx.mock.geometry.count(), 1);
     let state = fx.state();
     assert_eq!(state["version"], "fixture-next");
@@ -799,6 +801,15 @@ fn opening_fenix_repairs_the_desktop_runtime_and_stops_before_launch_if_it_fails
         &fx.prefix.join(core::PROGRAM).join("Fenix.exe"),
         "synthetic app",
     );
+    fx.mock
+        .clr_loader
+        .fail(Some(Error::patch("CLR backup failed")));
+    let error =
+        core::windows_app(&fx.mock, fx.root.as_os_str(), None, &silent, false, None).unwrap_err();
+    assert_eq!(error, Error::patch("CLR backup failed"));
+    assert_eq!(fx.mock.desktop.count(), 1);
+    assert!(fx.mock.spawned.lock().unwrap().is_empty());
+    fx.mock.clr_loader.fail(None);
     fx.mock
         .desktop
         .fail(Some(Error::patch("desktop runtime failed")));

@@ -31,6 +31,7 @@ use std::{
 pub const MARKER: &str = "private/fenix-linux-patch.json";
 pub const PROGRAM: &str = "drive_c/Program Files/FenixSim A320";
 pub const CONFIG: &str = "drive_c/ProgramData/Fenix/FenixSim A320";
+pub use crate::clr_loader::MSCOREE_OVERRIDE;
 pub const ENV: [(&str, &str); 11] = [
     ("WINEARCH", "win64"),
     ("WINEESYNC", "0"),
@@ -767,6 +768,7 @@ pub fn prepare_framework(
     progress: Progress<'_>,
     first_version: &str,
 ) -> Result<()> {
+    system.prepare_clr_loader(wine)?;
     if has_framework(wine.prefix())? {
         return progress("Microsoft .NET Framework 4.8 is already installed.");
     }
@@ -811,7 +813,7 @@ pub fn prepare_framework(
         wine.reg(
             r"HKCU\Software\Wine\DllOverrides",
             "mscoree",
-            "native",
+            MSCOREE_OVERRIDE,
             "REG_SZ",
         )?;
         for key in [
@@ -825,6 +827,13 @@ pub fn prepare_framework(
     })();
     wine.reg(r"HKCU\Software\Wine", "Version", "win10", "REG_SZ")?;
     installed?;
+    // The vendor installer may change this value after the bootstrap step.
+    wine.reg(
+        r"HKCU\Software\Wine\DllOverrides",
+        "mscoree",
+        MSCOREE_OVERRIDE,
+        "REG_SZ",
+    )?;
     if !has_framework(wine.prefix())? {
         // Wine may not have flushed the registry yet.
         wine.run(&argv!["wineboot", "-u"], &RunOptions::default())?;
@@ -1532,6 +1541,7 @@ pub fn install(
             fsx::chmod(&logpath, 0o600)?;
             let wine = system.wine(&staged, &runner, &log);
             let prepared = (|| {
+                system.prepare_clr_loader(wine.as_ref())?;
                 if upgrade.is_none() {
                     system.prepare_framework(
                         wine.as_ref(),
@@ -1916,6 +1926,7 @@ pub fn run_app(
         .open(log)
         .map_err(|error| Error::io_path(&error, log))?;
     let wine = system.wine(prefix, runner, &output);
+    system.prepare_clr_loader(wine.as_ref())?;
     system.prepare_desktop_runtime(
         wine.as_ref(),
         &fsx::parent(log).join("fenix-downloads"),

@@ -445,7 +445,7 @@ pub fn run(ctx: &Context<'_>, options: &Options) -> Result<()> {
     let update = json!({
         "format": 1,
         "installer_contract": 2,
-        "minimum_flightdeck_version": "0.2.22",
+        "minimum_flightdeck_version": "0.3.5",
         "release": update_release,
         "bundle": lock,
     });

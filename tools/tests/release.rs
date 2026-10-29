@@ -502,7 +502,7 @@ fn both_archives_hold_the_allowlisted_files_in_a_fixed_form() {
     );
     let update = fenix_patch::json::loads(&read(&out.join("flightdeck-update.json"))).unwrap();
     assert_eq!(update["installer_contract"], json!(2));
-    assert_eq!(update["minimum_flightdeck_version"], json!("0.2.22"));
+    assert_eq!(update["minimum_flightdeck_version"], json!("0.3.5"));
     assert_eq!(update["release"]["sha256"], json!(digest(&binary_path)));
     assert_eq!(
         update["release"]["size"],

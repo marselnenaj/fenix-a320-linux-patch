@@ -851,6 +851,14 @@ fn updating_prepares_desktop_10_before_changing_the_overlay() {
     let tool_before = fx.tool_state();
     fx.release();
     fx.mock
+        .clr_loader
+        .fail(Some(Error::patch("CLR backup failed")));
+    assert_patch_error(fx.install(&fx.item), "CLR backup failed");
+    assert_eq!(fx.mock.desktop.count(), 1);
+    assert_eq!(fx.state(&fx.item), before);
+    assert_eq!(fx.tool_state(), tool_before);
+    fx.mock.clr_loader.fail(None);
+    fx.mock
         .desktop
         .fail(Some(Error::patch("desktop runtime failed")));
     assert_patch_error(fx.install(&fx.item), "desktop runtime failed");

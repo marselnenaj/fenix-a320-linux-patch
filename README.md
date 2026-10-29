@@ -21,11 +21,16 @@ integration in [Flightdeck](https://github.com/marselnenaj/flightdeck-msfs-2024-
 for its Xbox PC editions, or the standalone setup for **Steam MSFS 2020 and 2024**.
 Installation, sign-in and activation use the official Fenix software.
 
-**Latest release: [0.1.1](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.1).**
+**Latest release: [0.1.2](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.2).**
 The installer and Linux launch/display helpers are self-contained Rust programs
 and need no Python runtime.
 
-**New in 0.1.1:** Repair valid or broken Tahoma font symlinks during setup while
+**New in 0.1.2:** Keep native CLR priority while allowing Wine builtin fallback.
+Repair the legacy native-only `mscoree` setting before setup, upgrades and opening
+Fenix, with a private backup. This addresses the reproduced IL-only assembly
+loader failure behind Flightdeck issue #10. Wine/DXVK payloads remain unchanged.
+
+**Since 0.1.1:** Repair valid or broken Tahoma font symlinks during setup while
 preserving shared font sources. If an older setup stopped at this step, use
 **Restore original profile** and retry with this installer.
 
@@ -40,7 +45,7 @@ below. [Release scope and checks](docs/release-readiness.md).
 
 ### With Flightdeck
 
-1. Update to **Flightdeck 0.2.22 or later**, then close MSFS and Fenix.
+1. Update to **Flightdeck 0.3.5 or later**, then close MSFS and Fenix.
 2. Open **Mods → Fenix A320** and follow the highlighted setup step.
 3. Run the official installer from your [Fenix account](https://fenixsim.com/dashboard/).
    Sign in, install the A320 for your simulator and wait for installation to finish.
@@ -50,8 +55,9 @@ Flightdeck 0.2.20 and later check for compatible new patch releases automaticall
 and apply them before the next MSFS or Fenix launch, while both are closed.
 Use **Updates** or **Mods → Fenix A320** to check or install a patch yourself.
 Aircraft files, renderer preferences and restore points are retained.
-The native-helper layout in 0.1.0 requires Flightdeck 0.2.22; update the
-launcher first when using 0.2.20 or 0.2.21.
+Patch 0.1.2 requires Flightdeck 0.3.5 for the matching loader repair. Older
+launchers retain their installed patch and request a launcher update first.
+The native-helper layout introduced in 0.1.0 uses installer contract 2.
 
 ### With Steam
 

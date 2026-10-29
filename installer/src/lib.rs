@@ -6,6 +6,7 @@
 //! of Python's standard library that its behaviour was defined with, so that
 //! state files, messages and the handling of files stay what they were.
 pub mod cli;
+pub mod clr_loader;
 pub mod core;
 pub mod desktop;
 pub mod download;

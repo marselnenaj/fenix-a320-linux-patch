@@ -977,7 +977,7 @@ fn prefix_files(item: &Target, files: &Map<String, Value>) -> Result<()> {
     Ok(())
 }
 
-/// Replace the overlay of an installed earlier release in place. The Windows profile stays as it is.
+/// Update the overlay and CLR loader policy, retaining the profile and aircraft settings.
 pub fn update(
     system: &dyn System,
     item: &Target,
@@ -1035,11 +1035,10 @@ pub fn update(
             .open(&path)
             .map_err(|error| Error::io_path(&error, &path))?;
         let wine = system.wine(&item.prefix(), &tool, &log);
-        let prepared = system.prepare_desktop_runtime(
-            wine.as_ref(),
-            &item.state().join("downloads"),
-            progress,
-        );
+        let prepared = (|| {
+            system.prepare_clr_loader(wine.as_ref())?;
+            system.prepare_desktop_runtime(wine.as_ref(), &item.state().join("downloads"), progress)
+        })();
         let stopped = wine.stop();
         prepared.and(stopped)?;
     }
@@ -1205,6 +1204,7 @@ pub fn install(
             system.proton_setup(&tool, &staged, item, &log)?;
             let wine = system.wine(&prefix, &tool, &log);
             let prepared = (|| {
+                system.prepare_clr_loader(wine.as_ref())?;
                 if !core::has_framework(&prefix)? {
                     remove_shared_mono(wine.as_ref())?;
                 }
