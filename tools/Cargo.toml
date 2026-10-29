@@ -25,7 +25,7 @@ rustix = { version = "1.1.4", features = ["process"] }
 signal-hook = { version = "0.4.5", default-features = false }
 tar = { version = "0.4.46", default-features = false }
 x11rb = { version = "0.13.2", default-features = false }
-zip = { version = "8.6.0", default-features = false, features = ["deflate-flate2"] }
+zip = { version = "9.0.5", default-features = false, features = ["deflate-flate2"] }
 
 [dev-dependencies]
 tempfile = "3.27.0"
