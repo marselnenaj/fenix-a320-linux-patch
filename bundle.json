@@ -1247,13 +1247,7 @@
           "dxvk-shared-resource-adapter.patch": "c36f02be634c4ee0c6d3383c32f783b620551bf04cddde3dcec096f70087f53e"
         }
       },
-      "display_renderer": "GPU",
-      "prefix_files": {
-        "drive_c/windows/system32/d2d1_geometry.dll": "663f1d59ec1c014b9ea47a6cef71b3d43579e9759a82f3ee2cbd80b8c6d9e85f",
-        "drive_c/windows/system32/FenixWindowGuard.exe": "2e3814496b8a539cac4e1b0f2cba5c8eb9e7d2bdc6b73df87aab6019164c4af3",
-        "drive_c/windows/system32/FenixMCDURefresh.exe": "1dfa0662c83e568007c12e15131ec58c176a9c79ff17a94004b27b2ed1494154",
-        "drive_c/windows/system32/fenix-runtime": "9e848248e1396557063ff536e612d269e6267c70cb4b3d5bcfee4268e9661acd"
-      }
+      "display_renderer": "GPU"
     },
     "cachyos-10": {
       "wine_repository": "CachyOS/wine-cachyos",
@@ -1719,12 +1713,6 @@
             "drive_c/windows/system32/fenix-runtime": "bb6ff52ff55e3b4671aa699710ead8a801aa69d16cedc739cb89ed02faa7179a"
           }
         }
-      },
-      "prefix_files": {
-        "drive_c/windows/system32/d2d1_geometry.dll": "663f1d59ec1c014b9ea47a6cef71b3d43579e9759a82f3ee2cbd80b8c6d9e85f",
-        "drive_c/windows/system32/FenixWindowGuard.exe": "2e3814496b8a539cac4e1b0f2cba5c8eb9e7d2bdc6b73df87aab6019164c4af3",
-        "drive_c/windows/system32/FenixMCDURefresh.exe": "1dfa0662c83e568007c12e15131ec58c176a9c79ff17a94004b27b2ed1494154",
-        "drive_c/windows/system32/fenix-runtime": "9e848248e1396557063ff536e612d269e6267c70cb4b3d5bcfee4268e9661acd"
       }
     },
     "cachyos-11": {
@@ -2233,13 +2221,7 @@
           "dxvk-shared-resource-adapter.patch": "c36f02be634c4ee0c6d3383c32f783b620551bf04cddde3dcec096f70087f53e"
         }
       },
-      "display_renderer": "GPU",
-      "prefix_files": {
-        "drive_c/windows/system32/d2d1_geometry.dll": "663f1d59ec1c014b9ea47a6cef71b3d43579e9759a82f3ee2cbd80b8c6d9e85f",
-        "drive_c/windows/system32/FenixWindowGuard.exe": "2e3814496b8a539cac4e1b0f2cba5c8eb9e7d2bdc6b73df87aab6019164c4af3",
-        "drive_c/windows/system32/FenixMCDURefresh.exe": "1dfa0662c83e568007c12e15131ec58c176a9c79ff17a94004b27b2ed1494154",
-        "drive_c/windows/system32/fenix-runtime": "9e848248e1396557063ff536e612d269e6267c70cb4b3d5bcfee4268e9661acd"
-      }
+      "display_renderer": "GPU"
     }
   },
   "dxvk": {
