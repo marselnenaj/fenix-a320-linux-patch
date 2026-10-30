@@ -342,6 +342,23 @@ pub fn run(ctx: &Context<'_>, options: &Options) -> Result<()> {
     let installer = check_installer(ctx, &options.installer, VERSION)?;
     core::verify_bundle(ctx.system, root.as_os_str())?;
     let variants = lock.table("variants")?;
+    let integration = lock.need_table("integration")?;
+    for entry in std::iter::once(&lock).chain(variants.values()) {
+        let prefix = entry.table("prefix_files")?;
+        for name in [
+            "FenixWindowGuard.exe",
+            "FenixMCDURefresh.exe",
+            "fenix-runtime",
+        ] {
+            if let Some(expected) = prefix.get(&format!("drive_c/windows/system32/{name}"))
+                && !integration
+                    .get(name)
+                    .is_some_and(|actual| json::equal(actual, expected))
+            {
+                return Err(value("Prefix helper checksum differs from integration"));
+            }
+        }
+    }
     let mut archives: Vec<PathBuf> = Vec::new();
     for entry in std::iter::once(&lock).chain(variants.values()) {
         for group in ["sources", "patches"] {

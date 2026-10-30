@@ -21,11 +21,11 @@ integration in [Flightdeck](https://github.com/marselnenaj/flightdeck-msfs-2024-
 for its Xbox PC editions, or the standalone setup for **Steam MSFS 2020 and 2024**.
 Installation, sign-in and activation use the official Fenix software.
 
-**Latest release: [0.1.3](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.3).**
+**Latest release: [0.1.4](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.4).**
 The installer and Linux launch/display helpers are self-contained Rust programs
 and need no Python runtime.
 
-**New in 0.1.3:** Update ZIP parsing and TLS dependencies, including certificate
+**New in 0.1.4:** Update ZIP parsing and TLS dependencies, including certificate
 trust fixes. Preserve the aircraft, display settings and prior restore identities.
 
 **Since 0.1.2:** Keep native CLR priority while allowing Wine builtin fallback.
@@ -58,7 +58,7 @@ Flightdeck 0.2.20 and later check for compatible new patch releases automaticall
 and apply them before the next MSFS or Fenix launch, while both are closed.
 Use **Updates** or **Mods → Fenix A320** to check or install a patch yourself.
 Aircraft files, renderer preferences and restore points are retained.
-Patch 0.1.3 requires Flightdeck 0.3.5 for the matching loader repair. Older
+Patch 0.1.4 requires Flightdeck 0.3.5 for the matching loader repair. Older
 launchers retain their installed patch and request a launcher update first.
 The native-helper layout introduced in 0.1.0 uses installer contract 2.
 
@@ -66,7 +66,7 @@ The native-helper layout introduced in 0.1.0 uses installer contract 2.
 
 1. Start your Steam edition of MSFS once, then close it.
 2. Download the **Linux installer ZIP** from the
-   [0.1.3 release](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.3)
+   [0.1.4 release](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.4)
    and extract it.
 3. Open **Fenix A320 Linux Patch** or run `./install.sh`.
 4. Follow the guided setup to install the patch, select **Proton Fenix A320**,

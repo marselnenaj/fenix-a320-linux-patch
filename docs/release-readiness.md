@@ -1,4 +1,4 @@
-# 0.1.3 release scope
+# 0.1.4 release scope
 
 This maintenance release updates ZIP and TLS dependencies, including distrust of
 compromised certificate intermediates. It preserves the CLR repair from 0.1.2,
@@ -20,7 +20,7 @@ or full-flight compatibility claim.
 | Linux image loader | Synthetic real-child checks exercise inherited licensed descriptors, native and portable views, unchanged encrypted originals and temporary-view cleanup. |
 | Display recovery | Rust checks cover both preference modes, failed probes/refresh, cancellation, journal retention, profile/PID and listener ownership. Live observations from earlier releases remain the available cockpit evidence. |
 | Corresponding sources | Release ZIP and source archive retain exact upstream sources, patches, notices and all current Rust sources. |
-| Flightdeck | Patch 0.1.3 requires Flightdeck 0.3.5; contract 2 is unchanged. Earlier launchers retain their installed patch and require a launcher update. Exact prior manifests are retained for all four runners. |
+| Flightdeck | Patch 0.1.4 requires Flightdeck 0.3.5; contract 2 is unchanged. Earlier launchers retain their installed patch and require a launcher update. Exact prior manifests are retained for all four runners. |
 | Gateway/EFB | Preview.11's loader correction and the issue #7 reporter's GPU/display-safe-mode evidence are retained. [Scope](display-startup.md). |
 | FenixSystem memory | [Issue #12](system-memory.md) remains open for the signature-query ownership lead and Fenix support response. No memory fix is claimed. |
 | Fenix v3 stability | Bounded starts and cockpit displays were tested previously; full flights and the earlier Wine assertion remain unqualified. |
