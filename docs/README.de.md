@@ -22,11 +22,15 @@ für dessen Xbox-PC-Versionen oder den separaten Installer für
 **Steam-MSFS 2020 und 2024**. Installation, Anmeldung und Aktivierung erfolgen
 mit der offiziellen Fenix-Software.
 
-**Aktuelles Release: [0.1.2](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.2).**
+**Aktuelles Release: [0.1.3](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.3).**
 Installer und Linux-Start-/Display-Helfer sind eigenständige Rust-Programme
 und benötigen keine Python-Laufzeit.
 
-**Neu in 0.1.2:** Native CLR-DLLs behalten Vorrang; Wine kann auf seinen
+**Neu in 0.1.3:** Sicherheitsupdates für ZIP- und TLS-Abhängigkeiten,
+einschließlich Zertifikatsprüfung. Flugzeugdateien, Anzeigeeinstellungen und
+bisherige Wiederherstellungspunkte bleiben erhalten.
+
+**Seit 0.1.2:** Native CLR-DLLs behalten Vorrang; Wine kann auf seinen
 eingebauten Loader zurückfallen. Der alte `mscoree`-Override wird vor Einrichtung,
 Upgrade und Fenix-Start mit lokaler Sicherung repariert. Der zugehörige
 Assembly-Ladefehler aus Flightdeck-Issue #10 wurde isoliert reproduziert.
@@ -53,7 +57,7 @@ sind weiterhin dokumentiert. [Prüfumfang](release-readiness.md).
 4. Fenix öffnen, anmelden und die Anzeigeeinstellungen anwenden.
    Danach MSFS über Flightdeck starten.
 
-Patch 0.1.2 benötigt Flightdeck 0.3.5 für die passende Loader-Reparatur. Ältere
+Patch 0.1.3 benötigt Flightdeck 0.3.5 für die passende Loader-Reparatur. Ältere
 Launcher behalten ihren installierten Patch und verlangen zunächst das
 Launcher-Update. Das seit 0.1.0 verwendete native Helferformat bleibt Vertrag 2.
 
@@ -67,7 +71,7 @@ bleiben erhalten.
 
 1. MSFS einmal über Steam starten und wieder schließen.
 2. Das **Linux-Installer-ZIP** aus dem
-   [0.1.0-Release](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.0)
+   [0.1.3-Release](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.3)
    herunterladen und entpacken.
 3. **Fenix A320 Linux Patch** öffnen oder `./install.sh` starten.
 4. Durch die Einrichtung führen lassen: Patch installieren,
