@@ -1,3 +1,14 @@
+# 0.1.4 — runtime manifest consistency, 30 October 2026
+
+- Keep the installed runtime-helper checksum identical to the integration payload
+  in every runner variant. Reject inconsistent prefix/helper metadata before
+  creating a release; add root and variant regressions.
+- Include all 0.1.3 dependency security updates and preserve exact earlier
+  release identities. The temporary 0.1.3 release was withdrawn from stable
+  updates after Flightdeck's real payload upgrade test caught its stale prefix hash.
+- Validate the actual published ZIP through Flightdeck's four-runner upgrade
+  path before integrating this version. Full flights remain separate validation.
+
 # 0.1.3 — dependency security updates, 30 October 2026
 
 - Update ZIP to the patched 9.x line (minimum 9.0.5), preserving Deflate-only

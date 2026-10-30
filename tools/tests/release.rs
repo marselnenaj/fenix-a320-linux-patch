@@ -638,6 +638,22 @@ fn the_installer_must_be_static_and_of_this_version() {
 }
 
 #[test]
+fn inconsistent_prefix_helper_hash_refuses_release_before_publication() {
+    for variant in [None, Some(VARIANT)] {
+        let fixture = Fixture::new();
+        fixture.tree.edit(|lock| {
+            let target = match variant {
+                None => lock,
+                Some(name) => &mut lock["variants"][name],
+            };
+            target["prefix_files"]["drive_c/windows/system32/fenix-runtime"] =
+                "0".repeat(64).into();
+        });
+        fixture.refused("Prefix helper checksum differs from integration");
+    }
+}
+
+#[test]
 fn a_real_static_installer_passes_the_format_check() {
     // The installer as it is released, when a build of it is at hand.
     let Some(sample) = std::env::var_os("FENIX_STATIC_INSTALLER").map(PathBuf::from) else {
