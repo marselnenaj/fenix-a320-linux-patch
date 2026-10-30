@@ -1,3 +1,15 @@
+# 0.1.3 — dependency security updates, 30 October 2026
+
+- Update ZIP to the patched 9.x line (minimum 9.0.5), preserving Deflate-only
+  release archives and explicit archive-member validation.
+- Update rustls to 0.23.46, rustls-webpki to 0.103.16 and webpki-roots to 1.0.10.
+  Keep HTTPS verification, pinned downloads, size limits and certificate checks.
+- Rebuild the static Rust installer/runtime programs. Retain the exact Wine/DXVK
+  and Windows helper payloads and preserve 0.1.2 upgrade/restore identities for
+  every runner. Installer contract 2 and minimum Flightdeck 0.3.5 are unchanged.
+- This maintenance update does not establish new full-flight compatibility or
+  resolve the separately tracked FenixSystem memory issue.
+
 # 0.1.2 — CLR loader fallback, 29 October 2026
 
 - Preserve native CLR priority with `mscoree=native,builtin`, including after

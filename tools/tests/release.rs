@@ -268,7 +268,7 @@ fn zip_members(path: &Path) -> Vec<ZipMember> {
     let mut members = Vec::new();
     for index in 0..archive.len() {
         let mut member = archive.by_index(index).unwrap();
-        let name = member.name().to_string();
+        let name = member.name().unwrap().into_owned();
         let time = member.last_modified().unwrap();
         assert_eq!(
             (
