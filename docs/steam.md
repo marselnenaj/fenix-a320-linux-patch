@@ -54,6 +54,18 @@ to GPU on the supported Proton 11 overlays; an explicit CPU fallback is retained
 CachyOS Proton 10 remains CPU-only. When MSFS 2020 and 2024 share the
 tool, update both: the second one only records the new version.
 
+If an update stops with **The Wine runner differs from the supported build**,
+one of the checked runner files does not match the expected build. Updates from
+preview.11 are supported; that version alone is not a reason to restore the
+profile or reinstall the aircraft. Keep the installation as it is while the
+mismatch is investigated. In your issue, include the patch version you are
+updating from and to, the Proton variant, and the full error. New source builds
+also show the runner directory and expected/actual SHA-256 hashes. In an older
+release, use `sha256sum` on the named file inside the installed
+`Proton-Fenix-A320-<variant>` directory to obtain the actual hash. Review local
+paths before posting. Do not replace individual runner DLLs or bypass the
+checksum check; the overlay requires a matching Wine build.
+
 ```sh
 ./install.sh targets
 ./install.sh status    --steam msfs2024

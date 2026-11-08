@@ -599,9 +599,12 @@ fn runner_and_bundle_are_verified_before_anything_is_copied() {
         (outcome.code, outcome.output),
         (
             1,
-            failure(
-                "The Wine runner differs from the supported build: files/lib/wine/x86_64-windows/kernel32.dll"
-            )
+            failure(&format!(
+                "The Wine runner differs from the supported build: files/lib/wine/x86_64-windows/kernel32.dll\nRunner: {}\nExpected SHA-256: {}\nActual SHA-256: {}",
+                fixture.runner.display(),
+                fenix_patch::fsx::digest_bytes(b"MZ kernel32\n"),
+                digest(&kernel32),
+            ))
         )
     );
     put(&kernel32, "MZ kernel32\n");

@@ -476,9 +476,12 @@ pub fn verify_runner(system: &dyn System, runner: &Path, lock: &Value) -> Result
     }
     for (name, expected) in &lock.need_table("runner_files")? {
         system.interrupted()?;
-        if !json::is_text(expected, &digest(regular(&runner.join(name), None)?)?) {
+        let found = digest(regular(&runner.join(name), None)?)?;
+        if !json::is_text(expected, &found) {
             return Err(Error::patch(format!(
-                "The Wine runner differs from the supported build: {name}"
+                "The Wine runner differs from the supported build: {name}\nRunner: {}\nExpected SHA-256: {}\nActual SHA-256: {found}",
+                runner.display(),
+                json::text(expected),
             )));
         }
     }

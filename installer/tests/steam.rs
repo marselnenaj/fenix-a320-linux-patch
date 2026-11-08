@@ -737,6 +737,42 @@ fn restore_returns_a_previously_forced_tool() {
 }
 
 #[test]
+fn update_reports_changed_crypt32_without_touching_the_installation() {
+    let fx = Fixture::new();
+    let name = "files/lib/wine/x86_64-windows/crypt32.dll";
+    put(&fx.proton.join(name), "stock crypt32");
+    let payload = fx.bundle.join("payload/variants/fixture").join(name);
+    put(&payload, "patched crypt32");
+    let expected = digest(&payload);
+    let mut lock = fx.mock.lock();
+    lock["variants"]["fixture"]["runner_files"][name] = json!(digest(&fx.proton.join(name)));
+    lock["variants"]["fixture"]["files"][name] = json!(expected);
+    fx.publish(&lock);
+    fx.install(&fx.item).unwrap();
+    fx.release();
+
+    // A replaced DLL must not be silently accepted just because the tool still
+    // records an upgradeable release. Keep the existing profile and tool intact.
+    put(&fx.tool().join(name), "unrecognized crypt32 build");
+    let actual = digest(&fx.tool().join(name));
+    let state = fx.state(&fx.item);
+    let tool = fx.files(&fx.tool());
+    let profile = fx.files(&fx.prefix);
+    fx.mock.clr_loader.reset();
+    let error = fx.install(&fx.item).unwrap_err();
+    assert!(error.is_patch());
+    let message = error.to_string();
+    assert!(message.contains(&format!("supported build: {name}")));
+    assert!(message.contains(&format!("Runner: {}", fx.tool().display())));
+    assert!(message.contains(&format!("Expected SHA-256: {expected}")));
+    assert!(message.contains(&format!("Actual SHA-256: {actual}")));
+    assert_eq!(fx.state(&fx.item), state);
+    assert_eq!(fx.files(&fx.tool()), tool);
+    assert_eq!(fx.files(&fx.prefix), profile);
+    assert_eq!(fx.mock.clr_loader.count(), 0);
+}
+
+#[test]
 fn update_replaces_the_overlay_and_keeps_the_profile() {
     let fx = Fixture::new();
     fx.install(&fx.item).unwrap();
