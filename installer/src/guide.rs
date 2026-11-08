@@ -286,6 +286,10 @@ pub fn overview(target: &dyn Target) -> Result<Value> {
         json!(format!("Start {simulator} {launch}. Fenix starts with it.")),
     );
     view.insert("update".into(), json!(update));
+    view.insert(
+        "can_repair".into(),
+        json!(steam && state == Some("installed") && get(&status, "idle") != &Value::Bool(false)),
+    );
     Ok(Value::Object(view))
 }
 
@@ -332,6 +336,7 @@ pub fn perform(
 ) -> Result<()> {
     match action {
         "install" => target.install(bundle, progress, proton),
+        "repair" => target.repair(bundle, progress),
         "select" => target.select(progress),
         "installer" => {
             // Paths are often pasted with quotes or as a file:// address.
@@ -456,17 +461,25 @@ pub fn text_wizard(
             }
         }
         let can_restore = view.get("can_restore") == Some(&Value::Bool(true));
+        let can_repair = view.get("can_repair") == Some(&Value::Bool(true));
         let prompt = format!(
-            "\n{}{}[q] Quit: ",
+            "\n{}{}{}[q] Quit: ",
             step.map(|step| format!("[Enter] {} · ", text(step, "button")))
                 .unwrap_or_default(),
+            if can_repair {
+                "[p] Repair Fenix Proton · "
+            } else {
+                ""
+            },
             if can_restore { "[r] Restore · " } else { "" }
         );
         let answer = py::strip(&console.input(&prompt)?).to_lowercase();
         if answer == "q" {
             return Ok(());
         }
-        let action = if answer == "r" && can_restore {
+        let action = if answer == "p" && can_repair {
+            "repair".to_string()
+        } else if answer == "r" && can_restore {
             "restore".to_string()
         } else if let (Some(step), true) = (step, answer.is_empty()) {
             text(step, "id")

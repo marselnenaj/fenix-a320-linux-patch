@@ -16,7 +16,7 @@ main { max-width:720px; margin:0 auto; padding:32px 16px 64px; }
 h1 { font-size:26px; margin:0 0 4px; }
 .sub { color:var(--muted); margin:0 0 20px; }
 select, input[type=text] { width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--text); font:inherit; }
-.banner { padding:12px 14px; border-radius:10px; margin:0 0 16px; }
+.banner { padding:12px 14px; border-radius:10px; margin:0 0 16px; white-space:pre-line; overflow-wrap:anywhere; }
 .warn { background:var(--warn-bg); color:var(--warn-text); } .err { background:var(--err-bg); color:var(--err-text); }
 .good { background:var(--card); border:1px solid var(--ok); }
 ol { list-style:none; margin:0; padding:0; }
@@ -108,6 +108,12 @@ function render() {
     select.replaceChildren(...state.targets.map((label, index) => el("option", {value: index}, label)));
   select.value = state.index; select.disabled = !!busy;
   const banners = [];
+  if (busy === "repair") banners.push(el("div", {class: "banner good"},
+    el("div", {class: "progress", role: "status"}, el("span", {class: "spin"}),
+      el("span", {}, "Repairing Fenix Proton …"), el("span", {class: "time", id: "time"}, clock()))));
+  if (!busy && !state.error && state.log.at(-1)?.startsWith("Fenix Proton repaired."))
+    banners.push(el("div", {class: "banner good", role: "status"},
+      "Fenix Proton repaired. Your aircraft and Windows profile were kept."));
   if (state.error && !busy) banners.push(el("div", {class: "banner err", role: "alert"}, state.error));
   if (view.message && !busy) banners.push(el("div", {class: "banner warn"}, view.message));
   if (view.complete && !busy) banners.push(el("div", {class: "banner good"}, el("strong", {}, "Everything is set up. "), view.finish));
@@ -144,6 +150,9 @@ function render() {
   const log = $("log"); log.textContent = state.log.join("\n"); log.scrollTop = log.scrollHeight;
   $("logbox").hidden = !state.log.length;
   const footer = [];
+  if (view.can_repair) footer.push(el("button", {disabled: !!busy, onclick: () => {
+    if (confirm("Repair the Fenix Proton from verified patch files? The previous tool is backed up; your aircraft, sign-in and Windows profile are kept. An older patch is updated to this installer's version.")) run("repair");
+  }}, "Repair Fenix Proton"));
   if (view.can_restore) footer.push(el("button", {disabled: !!busy, onclick: () => {
     if (confirm("Restore the Windows profile from before the patch? The current profile is kept as a local copy.")) run("restore");
   }}, "Restore original profile"));

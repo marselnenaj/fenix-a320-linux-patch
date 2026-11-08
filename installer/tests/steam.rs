@@ -470,7 +470,7 @@ fn changed_tool_and_running_profile_are_rejected() {
     *fx.mock.idle.lock().unwrap() = Some(Box::new(|_: &Path| Err(Error::patch("Close MSFS"))));
     assert_patch_error(fx.configure(&fx.item), "Close MSFS");
     *fx.mock.idle.lock().unwrap() = None;
-    put(&fx.tool().join("files/bin/wineserver"), "tampered");
+    fsx::atomic(&fx.tool().join("files/bin/wineserver"), b"tampered", 0o555).unwrap();
     assert_patch_error(fx.configure(&fx.item), "differs from the supported build");
     assert_patch_error(fx.windows_app(), "differs from the supported build");
 }
@@ -753,7 +753,7 @@ fn update_reports_changed_crypt32_without_touching_the_installation() {
 
     // A replaced DLL must not be silently accepted just because the tool still
     // records an upgradeable release. Keep the existing profile and tool intact.
-    put(&fx.tool().join(name), "unrecognized crypt32 build");
+    fsx::atomic(&fx.tool().join(name), b"unrecognized crypt32 build", 0o444).unwrap();
     let actual = digest(&fx.tool().join(name));
     let state = fx.state(&fx.item);
     let tool = fx.files(&fx.tool());
@@ -770,6 +770,160 @@ fn update_reports_changed_crypt32_without_touching_the_installation() {
     assert_eq!(fx.files(&fx.tool()), tool);
     assert_eq!(fx.files(&fx.prefix), profile);
     assert_eq!(fx.mock.clr_loader.count(), 0);
+}
+
+#[test]
+fn proton_overlay_cannot_be_written_through_a_profile_dll_link() {
+    use std::fs::OpenOptions;
+    let fx = Fixture::new();
+    fx.install(&fx.item).unwrap();
+    let dll = fx.tool().join(FILES[0]);
+    let linked = fx.prefix.join("drive_c/windows/system32/ntdll.dll");
+    fs::remove_file(&linked).unwrap();
+    symlink(&dll, &linked).unwrap();
+    let before = fs::read(&dll).unwrap();
+    assert_eq!(
+        OpenOptions::new()
+            .write(true)
+            .open(&linked)
+            .unwrap_err()
+            .kind(),
+        std::io::ErrorKind::PermissionDenied,
+    );
+    assert_eq!(fs::read(&dll).unwrap(), before);
+    // Read-only runner files must still be replaceable by a verified update.
+    fx.release();
+    fx.install(&fx.item).unwrap();
+    steam::verify_installed(fx.mock.as_ref(), &fx.item, &fx.state(&fx.item)).unwrap();
+}
+
+#[test]
+fn repair_replaces_damaged_crypt32_and_retains_the_exact_profile_and_old_tool() {
+    let fx = Fixture::new();
+    let name = "files/lib/wine/x86_64-windows/crypt32.dll";
+    put(&fx.proton.join(name), "stock crypt32");
+    let payload = fx.bundle.join("payload/variants/fixture").join(name);
+    put(&payload, "patched crypt32");
+    let mut lock = fx.mock.lock();
+    lock["variants"]["fixture"]["runner_files"][name] = json!(digest(&fx.proton.join(name)));
+    lock["variants"]["fixture"]["files"][name] = json!(digest(&payload));
+    fx.publish(&lock);
+    fx.install(&fx.item).unwrap();
+    fsx::atomic(&fx.tool().join(name), b"damaged crypt32", 0o644).unwrap();
+    let state = fx.state(&fx.item);
+    let profile = fx.files(&fx.prefix);
+    let damaged = fx.files(&fx.tool());
+    let target = targets::Steam::new(fx.system(), fx.item.clone());
+    assert_eq!(guide::overview(&target).unwrap()["can_repair"], true);
+    let messages = Messages::default();
+    steam::repair(fx.mock.as_ref(), &fx.item, fx.bundle.as_os_str(), &|m| {
+        messages.push(m)
+    })
+    .unwrap();
+    steam::verify_installed(fx.mock.as_ref(), &fx.item, &state).unwrap();
+    assert_eq!(fx.state(&fx.item), state);
+    assert_eq!(fx.files(&fx.prefix), profile);
+    assert_eq!(read(&fx.tool().join(name)), "patched crypt32");
+    let backups = glob(&fx.item.tools(), ".fenix-repair-");
+    assert_eq!(backups.len(), 1);
+    assert_eq!(fx.files(&backups[0].join("runner")), damaged);
+    assert!(messages.last().contains("previous tool is retained"));
+    assert!(
+        fs::OpenOptions::new()
+            .write(true)
+            .open(fx.tool().join(name))
+            .is_err()
+    );
+}
+
+#[test]
+fn repair_upgrades_a_known_earlier_overlay_without_resetting_aircraft_or_restore() {
+    let fx = Fixture::new();
+    fx.install(&fx.item).unwrap();
+    put(
+        &fx.prefix.join(core::PROGRAM).join("Fenix.exe"),
+        "installed aircraft",
+    );
+    let original_restore = fx.state(&fx.item)["previous"].clone();
+    fsx::atomic(&fx.tool().join(FILES[0]), b"damaged overlay", 0o444).unwrap();
+    fx.release();
+    steam::repair(fx.mock.as_ref(), &fx.item, fx.bundle.as_os_str(), &silent).unwrap();
+    let state = fx.state(&fx.item);
+    assert_eq!(state["version"], "fixture-next");
+    assert_eq!(state["previous"], original_restore);
+    assert_eq!(
+        read(&fx.prefix.join(core::PROGRAM).join("Fenix.exe")),
+        "installed aircraft"
+    );
+    steam::verify_installed(fx.mock.as_ref(), &fx.item, &state).unwrap();
+}
+
+#[test]
+fn repair_rejects_unknown_abi_partners_and_changed_payloads_without_replacing_anything() {
+    for changed_bundle in [false, true] {
+        let fx = Fixture::new();
+        fx.install(&fx.item).unwrap();
+        if changed_bundle {
+            put(
+                &fx.bundle.join("payload/variants/fixture").join(FILES[0]),
+                "bad download",
+            );
+        } else {
+            put(&fx.tool().join("files/bin/wine"), "unsupported Wine loader");
+        }
+        let tool = fx.files(&fx.tool());
+        let profile = fx.files(&fx.prefix);
+        let state = fx.state(&fx.item);
+        assert!(steam::repair(fx.mock.as_ref(), &fx.item, fx.bundle.as_os_str(), &silent).is_err());
+        assert_eq!(fx.files(&fx.tool()), tool);
+        assert_eq!(fx.files(&fx.prefix), profile);
+        assert_eq!(fx.state(&fx.item), state);
+        assert!(glob(&fx.item.tools(), ".fenix-repair-").is_empty());
+    }
+}
+
+#[test]
+fn repair_rechecks_idle_before_exchange_and_serializes_shared_tool_operations() {
+    let fx = Fixture::new();
+    fx.install(&fx.item).unwrap();
+    let other = fx.other();
+    fx.install(&other).unwrap();
+    let lease = steam::locked(fx.mock.as_ref(), &other, false, false).unwrap();
+    assert_patch_error(
+        steam::repair(fx.mock.as_ref(), &fx.item, fx.bundle.as_os_str(), &silent),
+        "Another Fenix patch operation",
+    );
+    drop(lease);
+    let peer_prefix = other.prefix();
+    *fx.mock.idle.lock().unwrap() = Some(Box::new(move |p| {
+        if p == peer_prefix {
+            Err(Error::patch("shared simulator running"))
+        } else {
+            Ok(())
+        }
+    }));
+    assert_patch_error(
+        steam::repair(fx.mock.as_ref(), &fx.item, fx.bundle.as_os_str(), &silent),
+        "shared simulator running",
+    );
+    let tool = fx.files(&fx.tool());
+    let profile = fx.files(&fx.prefix);
+    let calls = std::sync::atomic::AtomicUsize::new(0);
+    let prefix = fx.item.prefix();
+    *fx.mock.idle.lock().unwrap() = Some(Box::new(move |p| {
+        if p == prefix && calls.fetch_add(1, Ordering::SeqCst) == 2 {
+            Err(Error::patch("profile became busy before commit"))
+        } else {
+            Ok(())
+        }
+    }));
+    assert_patch_error(
+        steam::repair(fx.mock.as_ref(), &fx.item, fx.bundle.as_os_str(), &silent),
+        "profile became busy",
+    );
+    assert_eq!(fx.files(&fx.tool()), tool);
+    assert_eq!(fx.files(&fx.prefix), profile);
+    assert!(glob(&fx.item.tools(), ".fenix-repair-").is_empty());
 }
 
 #[test]
@@ -960,9 +1114,10 @@ fn update_finishes_after_an_interruption_and_rejects_unknown_releases() {
     fx.release();
     // Interrupted while the tool was being rewritten: one file new, the marker says so.
     let name = "files/bin/wineserver";
-    fs::write(
-        fx.tool().join(name),
-        read(&fx.bundle.join("payload/variants/fixture").join(name)),
+    fsx::atomic(
+        &fx.tool().join(name),
+        read(&fx.bundle.join("payload/variants/fixture").join(name)).as_bytes(),
+        0o555,
     )
     .unwrap();
     let mut marker = fx.tool_state();

@@ -1,3 +1,21 @@
+# Unreleased — Steam runner integrity and repair
+
+- Keep installed overlay DLLs and native modules read-only, as Proton's stock
+  files are. A writable profile link must not grant Windows programs write
+  access to the shared runner. Verified updates can still replace these files.
+- Add **Repair Fenix Proton** to the browser and terminal setup and `repair
+  --steam msfs2024` to the CLI. Validate the original Wine build's untouched ABI
+  partners, prepare and verify a complete replacement, then exchange directories
+  atomically. Keep the previous tool and the existing Windows profile. Known
+  earlier patch versions complete the normal update after repair.
+- Serialize operations on tools shared by MSFS 2020/2024 and check all known
+  profile users before replacement. Reject altered payloads, unsupported base
+  builds, unfinished transactions and ownership changes.
+- The two reports in #21 establish repeated checksum failures. Their exact
+  writer and the simulator-start failure have not been reproduced. The
+  write-through permission defect is separately reproduced by a regression;
+  repair restores damaged overlay files without accepting unverified hashes.
+
 # 0.1.4 — runtime manifest consistency, 30 October 2026
 
 - Keep the installed runtime-helper checksum identical to the integration payload

@@ -338,6 +338,13 @@ pub fn locked(system: &dyn System, item: &Target, idle: bool, recovery: bool) ->
     if !recovery || fsx::exists(&item.compat()) {
         checked(item, recovery)?;
     }
+    // Both simulators, including profiles in different libraries, can share
+    // one compatibility tool. Serialize their setup/update/repair/restore.
+    let shared = core::lock_file(
+        &item.root.join("fenix-a320-linux-patch.lock"),
+        "Invalid shared Fenix patch lock",
+        "Another Fenix patch operation is using this Steam installation.",
+    )?;
     let state = item.state();
     fsx::mkdir_parents(&state, 0o700)?;
     if state.is_symlink() || fsx::stat(&state)?.uid() != rustix::process::getuid().as_raw() {
@@ -351,7 +358,9 @@ pub fn locked(system: &dyn System, item: &Target, idle: bool, recovery: bool) ->
     if idle && fsx::exists(&item.prefix()) {
         system.ensure_idle(&item.prefix())?;
     }
-    Ok(Lock::new(state, file))
+    let mut lock = Lock::new(state, file);
+    lock.retain(shared);
+    Ok(lock)
 }
 
 pub fn tool_name(variant: &str) -> String {
@@ -975,6 +984,154 @@ fn prefix_files(item: &Target, files: &Map<String, Value>) -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// Replacement is safe only for the files our verified overlay supplies. The
+/// untouched loader and Wine ABI partners still have to match the pinned build.
+fn verify_partners(system: &dyn System, tool: &Path, lock: &Value) -> Result<()> {
+    let mut partners = lock.need_table("runner_files")?;
+    for name in lock.need_table("files")?.keys() {
+        partners.remove(name);
+    }
+    let mut identity = json::object(lock.clone(), "bundle.json")?;
+    identity.insert("runner_files".into(), Value::Object(partners));
+    core::verify_runner(system, tool, &Value::Object(identity))
+}
+
+struct RepairStage {
+    directory: PathBuf,
+    committed: bool,
+}
+
+impl Drop for RepairStage {
+    fn drop(&mut self) {
+        if !self.committed {
+            let _ = fsx::rmtree(&self.directory);
+        }
+    }
+}
+
+/// Repair an owned tool from verified payloads without discarding the profile.
+/// The complete replacement is verified before one atomic directory exchange;
+/// the previous tool remains in the private repair directory for inspection.
+pub fn repair(
+    system: &dyn System,
+    item: &Target,
+    bundle: &OsStr,
+    progress: Progress<'_>,
+) -> Result<()> {
+    system.host_check()?;
+    let bundle = core::verify_bundle(system, bundle)?;
+    let _held = locked(system, item, true, false)?;
+    let state = read_json(&item.marker())?;
+    belongs(item, &state)?;
+    let variant = state.need("variant")?;
+    let lock = system.manifest(core::variant_name(variant)?.as_deref())?;
+    let version = lock.need("version")?;
+    let installed = state.need("version")?;
+    let current = json::equal(installed, version);
+    if !state.is("state", "installed") || !(current || updatable(system, &state)?) {
+        return Err(Error::patch(
+            "Finish the existing patch transaction before repairing Proton.",
+        ));
+    }
+    let tool = contained(&item.tools(), state.need_str("tool")?)?;
+    let metadata = fsx::lstat(&tool)?;
+    if !metadata.is_dir() || metadata.uid() != rustix::process::getuid().as_raw() {
+        return Err(Error::patch(
+            "Repair requires an owned, ordinary Fenix Proton directory.",
+        ));
+    }
+    let marker = tool_state(&tool)?
+        .ok_or_else(|| Error::patch("The Fenix Proton ownership marker is missing."))?;
+    if !marker.is("state", "ready")
+        || !json::equal(marker.field("variant"), variant)
+        || !(json::equal(marker.field("version"), installed)
+            || json::equal(marker.field("version"), version))
+    {
+        return Err(Error::patch(
+            "The Fenix Proton tool does not belong to this installation.",
+        ));
+    }
+    verify_partners(system, &tool, &lock)?;
+    let previous = if current {
+        lock.clone()
+    } else {
+        lock.need("previous_releases")?
+            .need(state.need_str("version")?)?
+            .clone()
+    };
+    prefix_files(item, &previous.table("prefix_files")?)?;
+    let peers = tool_users(system, item, &fsx::name(&tool))?;
+    let idle = || -> Result<()> {
+        system.ensure_idle(&item.prefix())?;
+        for other in &peers {
+            if fsx::exists(&other.prefix()) {
+                system.ensure_idle(&other.prefix())?;
+            }
+        }
+        Ok(())
+    };
+    idle()?;
+    progress(
+        "Preparing a verified Fenix Proton replacement; the previous tool will be retained …",
+    )?;
+    let backup = fsx::mkdtemp(&item.tools(), ".fenix-repair-")?;
+    let mut stage = RepairStage {
+        directory: backup.clone(),
+        committed: false,
+    };
+    let candidate = backup.join("runner");
+    core::copy_tree(system, &tool, &candidate)?;
+    core::apply_overlay(
+        system,
+        &backup.join("prefix"),
+        &candidate,
+        &bundle,
+        core::variant_name(variant)?.as_deref(),
+    )?;
+    let mut repaired = json::object(marker.clone(), "The tool state")?;
+    repaired.insert("version".into(), version.clone());
+    write_json(&candidate.join(TOOL_MARKER), &Value::Object(repaired))?;
+    verify_tool(system, &candidate, variant, version)?;
+    write_json(
+        &backup.join("repair.json"),
+        &json!({"format":1,"tool":state.need("tool")?,"previous_state":state,"version":version}),
+    )?;
+    idle()?;
+    system.interrupted()?;
+    verify_partners(system, &tool, &lock)?;
+    let now = fsx::lstat(&tool)?;
+    if [metadata.dev(), metadata.ino()] != [now.dev(), now.ino()]
+        || tool_state(&tool)?.as_ref() != Some(&marker)
+        || read_json(&item.marker())? != state
+    {
+        return Err(Error::patch(
+            "The Fenix installation changed while preparing its repair; nothing was replaced.",
+        ));
+    }
+    rustix::fs::renameat_with(
+        rustix::fs::CWD,
+        &tool,
+        rustix::fs::CWD,
+        &candidate,
+        rustix::fs::RenameFlags::EXCHANGE,
+    )
+    .map_err(|error| Error::io_paths(&io::Error::from(error), &tool, &candidate))?;
+    stage.committed = true;
+    File::open(item.tools())?.sync_all()?;
+    File::open(&backup)?.sync_all()?;
+    if current {
+        verify_installed(system, item, &state)?;
+    } else {
+        // Existing update recovery already handles a shared tool that has been
+        // updated before this simulator's profile and helper metadata.
+        update(system, item, &bundle, &state, progress)?;
+    }
+    progress(&format!(
+        "Fenix Proton repaired. The previous tool is retained in {}. Your aircraft and Windows profile were kept.",
+        candidate.display()
+    ))
 }
 
 /// Update the overlay and CLR loader policy, retaining the profile and aircraft settings.
