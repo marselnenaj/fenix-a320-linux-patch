@@ -66,6 +66,30 @@ release, use `sha256sum` on the named file inside the installed
 paths before posting. Do not replace individual runner DLLs or bypass the
 checksum check; the overlay requires a matching Wine build.
 
+### Repair Fenix Proton (unreleased)
+
+In new source builds, close MSFS and Fenix for every simulator sharing the tool,
+then choose **Repair Fenix Proton** at the bottom of the setup window. Terminal
+setup offers **[p] Repair Fenix Proton**. The equivalent command is:
+
+```sh
+./install.sh repair --steam msfs2024
+```
+
+Use `msfs2020` for that simulator. Repair replaces only the manifest-pinned
+overlay files; the untouched Wine loader and ABI partners must match the
+supported build. It verifies a complete replacement before atomically switching
+tools and retains the previous tool under `compatibilitytools.d/.fenix-repair-*`.
+The existing aircraft, sign-in, profile and original restore point are retained.
+For a known older patch, repair also runs the normal patch update. If that
+update stops, retry **Update patch**; the verified new tool is already in place.
+The previous tool backup is not removed automatically.
+
+An unknown base build or unfinished installation is still rejected. Do not
+override checksums or substitute individual DLLs. A successful repair establishes
+runner integrity; it does not establish that a simulator startup failure with
+another cause is fixed. The exact causes of the reports in #21 remain unverified.
+
 ```sh
 ./install.sh targets
 ./install.sh status    --steam msfs2024

@@ -32,7 +32,7 @@ use std::{
 )]
 pub struct Args {
     #[arg(
-        value_parser = ["status", "install", "select", "configure", "restore", "installer", "manager", "open", "targets", "gui"],
+        value_parser = ["status", "install", "repair", "select", "configure", "restore", "installer", "manager", "open", "targets", "gui"],
         default_value = "gui",
         hide_default_value = true
     )]
@@ -273,6 +273,7 @@ fn execute(cli: &mut Cli, args: &Args) -> Result<i32> {
     };
     match args.command.as_str() {
         "install" => target.install(&bundle, &progress, args.proton.as_deref())?,
+        "repair" => target.repair(&bundle, &progress)?,
         "select" => target.select(&progress)?,
         "configure" => target.configure_with_renderer(
             &progress,

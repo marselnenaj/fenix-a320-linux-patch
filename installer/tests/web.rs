@@ -80,6 +80,10 @@ impl Target for Fixture {
         Err(Error::patch("Quit Steam completely"))
     }
 
+    fn repair(&self, _bundle: &OsStr, progress: Progress<'_>) -> Result<()> {
+        progress("Fenix Proton repaired; profile retained.")
+    }
+
     fn configure(&self, _progress: Progress<'_>) -> Result<()> {
         Err(Error::other("not part of this fixture"))
     }
@@ -320,6 +324,26 @@ fn one_step_runs_at_a_time_and_errors_are_shown() {
     assert_eq!(web.state()["error"], "Unknown action");
     assert_eq!(web.post("/secret/api/quit", json!({})), 200);
     assert!(web.session.is_closed());
+}
+
+#[test]
+fn installed_steam_setup_exposes_and_dispatches_runner_repair() {
+    let web = Web::new();
+    assert_eq!(web.state()["view"]["can_repair"], false);
+    web.target.installed.store(true, Ordering::SeqCst);
+    assert_eq!(web.state()["view"]["can_repair"], true);
+    assert_eq!(web.post("/secret/api/run", json!({"action":"repair"})), 200);
+    web.wait_idle();
+    let state = web.state();
+    assert!(state["error"].is_null());
+    assert!(
+        state["log"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|line| line.as_str().unwrap().contains("profile retained"))
+    );
+    assert!(web.target.installed.load(Ordering::SeqCst));
 }
 
 #[test]

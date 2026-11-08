@@ -609,10 +609,12 @@ fn upgrade_keeps_aircraft_settings_and_original_restore_point() {
 fn upgrade_rejects_changed_previous_files_without_changing_state() {
     let fx = Fixture::new();
     let previous = fx.prepare_upgrade();
-    put(
+    fsx::atomic(
         &fx.active_runner().join("files/bin/wineserver"),
-        "custom binary",
-    );
+        b"custom binary",
+        0o555,
+    )
+    .unwrap();
     assert_patch_error(fx.install(), "Installed patch file changed");
     assert_eq!(fx.state(), previous);
     assert!(fx.prefix.join("aircraft-installed-later").is_file());

@@ -25,6 +25,11 @@ Installation, sign-in and activation use the official Fenix software.
 The installer and Linux launch/display helpers are self-contained Rust programs
 and need no Python runtime.
 
+**Unreleased:** protect overlay files against writes through Proton's profile
+links. **Repair Fenix Proton** replaces damaged overlay files from verified
+payloads, keeps a backup of the previous tool and retains the Windows profile.
+The untouched Wine build must still match. [Recovery](docs/steam.md#repair-fenix-proton-unreleased).
+
 **New in 0.1.4:** Update ZIP parsing and TLS dependencies, including certificate
 trust fixes. Preserve the aircraft, display settings and prior restore identities.
 

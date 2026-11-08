@@ -350,12 +350,19 @@ pub fn ensure_idle(prefix: &Path) -> Result<()> {
 pub struct Lock {
     /// The runtime, or the patch state directory of a Steam simulator.
     pub root: PathBuf,
-    _file: File,
+    _files: Vec<File>,
 }
 
 impl Lock {
     pub fn new(root: PathBuf, file: File) -> Self {
-        Self { root, _file: file }
+        Self {
+            root,
+            _files: vec![file],
+        }
+    }
+
+    pub(crate) fn retain(&mut self, file: File) {
+        self._files.push(file);
     }
 }
 
@@ -400,7 +407,7 @@ pub fn locked(system: &dyn System, runtime: &OsStr, idle: bool, recovery: bool) 
     if idle {
         system.ensure_idle(&root.join("local/msfs-prefix"))?;
     }
-    Ok(Lock { root, _file: file })
+    Ok(Lock::new(root, file))
 }
 
 fn glibc_version(output: &[u8]) -> Option<(u64, u64)> {
@@ -583,7 +590,9 @@ pub fn apply_overlay(
         atomic(
             &contained(runner, name)?,
             &data,
-            if name.contains("/bin/") { 0o755 } else { 0o644 },
+            // Proton can link profile DLLs back into this tool. Windows setup
+            // must replace its profile link, never write through into Wine.
+            if name.contains("/bin/") { 0o555 } else { 0o444 },
         )?;
         if name.starts_with("files/lib/wine/x86_64-windows/") || name == DXGI_FILE {
             atomic(

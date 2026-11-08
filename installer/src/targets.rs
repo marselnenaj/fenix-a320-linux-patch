@@ -36,6 +36,11 @@ pub trait Target: Send + Sync {
         self.configure(progress)
     }
     fn restore(&self, progress: Progress<'_>) -> Result<()>;
+    fn repair(&self, _bundle: &OsStr, _progress: Progress<'_>) -> Result<()> {
+        Err(Error::patch(
+            "Runner repair is available for standalone Steam installations.",
+        ))
+    }
     fn app(&self, progress: Progress<'_>, executable: Option<&OsStr>, manager: bool) -> Result<()>;
 
     /// Steam only: force the Fenix Proton for the simulator.
@@ -161,6 +166,10 @@ impl Target for Steam {
         proton: Option<&OsStr>,
     ) -> Result<()> {
         steam::install(self.system.as_ref(), &self.item, bundle, progress, proton)
+    }
+
+    fn repair(&self, bundle: &OsStr, progress: Progress<'_>) -> Result<()> {
+        steam::repair(self.system.as_ref(), &self.item, bundle, progress)
     }
 
     fn configure(&self, progress: Progress<'_>) -> Result<()> {
