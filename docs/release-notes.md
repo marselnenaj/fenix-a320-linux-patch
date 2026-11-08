@@ -1,4 +1,4 @@
-# Unreleased — Steam runner integrity and repair
+# 0.1.5 — Steam runner integrity and repair, 8 November 2026
 
 - Keep installed overlay DLLs and native modules read-only, as Proton's stock
   files are. A writable profile link must not grant Windows programs write

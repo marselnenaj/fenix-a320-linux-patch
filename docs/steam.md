@@ -66,9 +66,9 @@ release, use `sha256sum` on the named file inside the installed
 paths before posting. Do not replace individual runner DLLs or bypass the
 checksum check; the overlay requires a matching Wine build.
 
-### Repair Fenix Proton (unreleased)
+### Repair Fenix Proton (0.1.5)
 
-In new source builds, close MSFS and Fenix for every simulator sharing the tool,
+Starting with 0.1.5, close MSFS and Fenix for every simulator sharing the tool,
 then choose **Repair Fenix Proton** at the bottom of the setup window. Terminal
 setup offers **[p] Repair Fenix Proton**. The equivalent command is:
 

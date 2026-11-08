@@ -26,11 +26,11 @@ mit der offiziellen Fenix-Software.
 Installer und Linux-Start-/Display-Helfer sind eigenständige Rust-Programme
 und benötigen keine Python-Laufzeit.
 
-**Noch unveröffentlicht:** Overlay-Dateien sind gegen Schreibzugriffe über Protons
+**Neu in 0.1.5:** Overlay-Dateien sind gegen Schreibzugriffe über Protons
 Profil-Links geschützt. **Repair Fenix Proton** ersetzt beschädigte Overlay-Dateien
 aus geprüften Dateien, sichert den bisherigen Runner und erhält das Windows-Profil.
 Die übrigen Wine-Dateien müssen weiterhin zum unterstützten Build passen.
-[Reparatur](steam.md#repair-fenix-proton-unreleased).
+[Reparatur](steam.md#repair-fenix-proton-015).
 
 **Neu in 0.1.4:** Sicherheitsupdates für ZIP- und TLS-Abhängigkeiten,
 einschließlich Zertifikatsprüfung. Flugzeugdateien, Anzeigeeinstellungen und
