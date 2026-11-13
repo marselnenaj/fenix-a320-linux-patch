@@ -22,9 +22,14 @@ für dessen Xbox-PC-Versionen oder den separaten Installer für
 **Steam-MSFS 2020 und 2024**. Installation, Anmeldung und Aktivierung erfolgen
 mit der offiziellen Fenix-Software.
 
-**Aktuelles Release: [0.1.4](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.4).**
+**Aktuelles Release: [0.1.6](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.6).**
 Installer und Linux-Start-/Display-Helfer sind eigenständige Rust-Programme
 und benötigen keine Python-Laufzeit.
+
+**Neu in 0.1.6:** Ein fehlgeschlagenes Patch-Update in Flightdeck lässt den
+installierten Patch nutzbar und kann einfach wiederholt werden, statt Restore zu
+verlangen. Installationen, die nach einem früheren Update hängen geblieben sind,
+werden automatisch repariert. Ungenutzte Profilkopien früherer Updates werden entfernt.
 
 **Neu in 0.1.5:** Overlay-Dateien sind gegen Schreibzugriffe über Protons
 Profil-Links geschützt. **Repair Fenix Proton** ersetzt beschädigte Overlay-Dateien

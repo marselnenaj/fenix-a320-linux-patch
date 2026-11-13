@@ -1,3 +1,23 @@
+# 0.1.6 — recoverable patch updates, 13 November 2026
+
+- A failed update of the Flightdeck patch no longer leaves the installation in
+  an unfinished transaction. Nothing of an update is published before its
+  commit, so the installer reinstates the verified installed patch at once and
+  removes the unused staging copy. Fenix stays usable and **Update patch** can
+  simply run again. Before, every later action required **Restore**, which
+  returns to the profile from before the first patch.
+- Installations left in that state by earlier versions are recovered by the next
+  update, settings or Fenix action; the setup shows the installed patch again.
+  An altered or partly published journal is still kept for Restore.
+- An update of a profile that has not been configured yet no longer writes Fenix
+  display settings, which could stop the update when the settings folder is absent.
+- Remove the profile copy taken before each completed update. Restore never uses
+  it, and every update so far kept a full copy of the Windows profile. A copy left
+  by an interrupted commit is kept.
+- Matches Flightdeck 0.3.11, which ships the same recovery for its own setup
+  after Discord reports of "Last operation failed" when opening Fenix following
+  an automatic update. The Steam setup updates in place and was not affected.
+
 # 0.1.5 — Steam runner integrity and repair, 8 November 2026
 
 - Keep installed overlay DLLs and native modules read-only, as Proton's stock

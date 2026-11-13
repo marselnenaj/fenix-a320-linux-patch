@@ -407,6 +407,11 @@ pub fn locked(system: &dyn System, runtime: &OsStr, idle: bool, recovery: bool) 
     if idle {
         system.ensure_idle(&root.join("local/msfs-prefix"))?;
     }
+    if !recovery {
+        // Every change first returns from an unfinished update to the patch it
+        // started from. Restore keeps the journal and decides on its own.
+        let _ = recover_update(system, &root);
+    }
     Ok(Lock::new(root, file))
 }
 
@@ -1380,6 +1385,134 @@ fn stamp() -> Result<String> {
     ))
 }
 
+static STAMP: LazyLock<Regex> = LazyLock::new(|| py::pattern(r"\A[0-9]{8}T[0-9]{6}-[0-9a-f]{8}\z"));
+const UPDATE_COPY: &str = "msfs-prefix.before-fenix-update-";
+
+/// The installed state an unfinished update started from, if its journal is
+/// intact and nothing of the update was published: the staged profile, runner
+/// and launch scripts only take effect in the committing step.
+fn unfinished_update(root: &Path, state: &Value) -> Option<Value> {
+    (|| -> Result<Option<Value>> {
+        if !state.is("state", "preparing") || state.item("upgrade_backup").is_none() {
+            return Ok(None);
+        }
+        let Some(stamp) = state
+            .str("work")
+            .and_then(|work| work.strip_prefix("local/fenix-patch-"))
+            .filter(|stamp| STAMP.is_match(stamp))
+        else {
+            return Ok(None);
+        };
+        let copy = format!("local/{UPDATE_COPY}{stamp}");
+        if state.str("upgrade_backup")
+            != Some(format!("private/fenix-patch-backup-{stamp}").as_str())
+            || state.str("upgrade_previous_prefix") != Some(copy.as_str())
+            || fsx::exists(&root.join(&copy))
+        {
+            return Ok(None);
+        }
+        let backup = contained(root, state.need_str("upgrade_backup")?)?;
+        let previous = read_json(&backup.join("previous-patch.json"))?;
+        if !previous.is("state", "installed")
+            || json::equal(previous.field("work"), state.field("work"))
+            || !json::equal(previous.field("variant"), state.field("variant"))
+        {
+            return Ok(None);
+        }
+        for key in [
+            "backup",
+            "previous_prefix",
+            "previous_runner",
+            "original_prefix_id",
+        ] {
+            if previous.item(key).is_none() || !json::equal(previous.field(key), state.field(key)) {
+                return Ok(None);
+            }
+        }
+        let runner = contained(root, previous.need_str("work")?)?.join("runner");
+        if fsx::resolve_strict(&root.join("runner"))? != runner {
+            return Ok(None);
+        }
+        let prefix = root.join("local/msfs-prefix");
+        let staged = contained(root, state.need_str("work")?)?.join("prefix");
+        if fsx::exists(&staged) && json::equal(&identity(&staged)?, &identity(&prefix)?) {
+            return Ok(None);
+        }
+        for name in SCRIPTS {
+            if digest(regular(&root.join("tools").join(name), None)?)?
+                != digest(regular(&backup.join(name), None)?)?
+            {
+                return Ok(None);
+            }
+        }
+        Ok(Some(previous))
+    })()
+    .ok()
+    .flatten()
+}
+
+/// Reinstate the verified state an unfinished update started from, so that
+/// the installed patch stays usable and the update can simply run again.
+/// The unused staging copy is removed; the journal stays in the backup.
+fn recover_update(system: &dyn System, root: &Path) -> Result<Option<Value>> {
+    let marker = root.join(MARKER);
+    if !fsx::exists(&marker) {
+        return Ok(None);
+    }
+    let state = read_json(&marker)?;
+    let Some(previous) = unfinished_update(root, &state) else {
+        return Ok(None);
+    };
+    verify_installed(system, root, &previous)?;
+    let work = contained(root, state.need_str("work")?)?;
+    if fsx::exists(&work.join("prefix")) {
+        system.ensure_idle(&work.join("prefix"))?;
+    }
+    let backup = contained(root, state.need_str("upgrade_backup")?)?;
+    write_json(&backup.join("interrupted.json"), &state)?;
+    write_json(&marker, &previous)?;
+    // A copy that cannot be removed only costs space; it is never used.
+    let _ = fs::remove_dir_all(&work);
+    Ok(Some(previous))
+}
+
+/// Profile copies taken before each update are not used by Restore, which
+/// returns to the profile from before the first patch. Remove the copies of
+/// updates that completed: the current one and those named by earlier
+/// installed states. A copy left by an interrupted commit is kept.
+fn prune_update_copies(system: &dyn System, root: &Path, state: &Value) {
+    let mut done: Vec<String> = state
+        .str("upgrade_previous_prefix")
+        .map(str::to_string)
+        .into_iter()
+        .collect();
+    if let Ok(entries) = fsx::list_dir(&root.join("private")) {
+        for entry in entries {
+            if !fsx::name(&entry).starts_with("fenix-patch-backup-") {
+                continue;
+            }
+            if let Ok(previous) = read_json(&entry.join("previous-patch.json"))
+                && previous.is("state", "installed")
+                && let Some(copy) = previous.str("upgrade_previous_prefix")
+            {
+                done.push(copy.to_string());
+            }
+        }
+    }
+    for copy in done {
+        let Some(stamp) = copy.strip_prefix(&format!("local/{UPDATE_COPY}")) else {
+            continue;
+        };
+        let path = root.join(&copy);
+        if !STAMP.is_match(stamp) || path.is_symlink() || !path.is_dir() {
+            continue;
+        }
+        if system.ensure_idle(&path).is_ok() {
+            let _ = fs::remove_dir_all(&path);
+        }
+    }
+}
+
 pub fn install(
     system: &dyn System,
     runtime: &OsStr,
@@ -1582,9 +1715,11 @@ pub fn install(
         // Bootstrap native Framework with the unchanged runner first.
         // Publish the overlay only after every staging Wine process exited.
         apply_overlay(system, &staged, &runner, &bundle, variant.as_deref())?;
-        let renderer_changed = upgrade
-            .as_ref()
-            .is_some_and(|previous| DisplayRenderer::from_state(previous) != renderer);
+        // An unconfigured profile gets its settings when it is configured.
+        let renderer_changed = upgrade.as_ref().is_some_and(|previous| {
+            previous.item("configured") == Some(&Value::Bool(true))
+                && DisplayRenderer::from_state(previous) != renderer
+        });
         if renderer_changed {
             let settings_backup = backup.join("settings-before-update");
             fsx::mkdir(&settings_backup, 0o700)?;
@@ -1651,11 +1786,22 @@ pub fn install(
         })
     })();
     if result.is_err() {
+        if upgrade.is_some()
+            && let Ok(Some(previous)) = recover_update(system, root)
+        {
+            progress(&format!(
+                "The update did not finish. Patch {} remains installed; your aircraft and settings are unchanged.",
+                json::text(previous.field("version"))
+            ))?;
+            return result;
+        }
         // Preserve a journal and all profiles; restore is explicitly available
         // after process failure or power loss, without guessing what finished.
         progress(
             "Setup did not finish. The original profile or its backup is retained. Use Restore.",
         )?;
+    } else if upgrade.is_some() {
+        prune_update_copies(system, root, &Value::Object(state));
     }
     result
 }
@@ -2069,8 +2215,16 @@ pub fn snapshot(system: &dyn System, runtime: &OsStr) -> Result<Value> {
         result.insert("manager_installed".into(), json!(manager));
         let marker = root.join(MARKER);
         if fsx::exists(&marker) {
-            let state = read_json(&marker)?;
+            let mut state = read_json(&marker)?;
             json::object(state.clone(), "The patch state")?;
+            // The next change reinstates this state before it continues.
+            if let Some(previous) = unfinished_update(&root, &state) {
+                state = previous;
+                result.insert(
+                    "message".into(),
+                    json!("The last patch update did not finish. The installed patch was kept; update it again."),
+                );
+            }
             let installed = state.is("state", "installed");
             state_report(&mut result, &state);
             result.insert(

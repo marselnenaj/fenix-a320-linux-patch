@@ -21,9 +21,14 @@ integration in [Flightdeck](https://github.com/marselnenaj/flightdeck-msfs-2024-
 for its Xbox PC editions, or the standalone setup for **Steam MSFS 2020 and 2024**.
 Installation, sign-in and activation use the official Fenix software.
 
-**Latest release: [0.1.4](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.4).**
+**Latest release: [0.1.6](https://github.com/marselnenaj/fenix-a320-linux-patch/releases/tag/v0.1.6).**
 The installer and Linux launch/display helpers are self-contained Rust programs
 and need no Python runtime.
+
+**New in 0.1.6:** a failed patch update in Flightdeck keeps the installed patch
+usable and can simply be retried, instead of requiring Restore. Installations
+stuck after an earlier failed update are recovered automatically. Unused
+profile copies from earlier updates are removed.
 
 **New in 0.1.5:** protect overlay files against writes through Proton's profile
 links. **Repair Fenix Proton** replaces damaged overlay files from verified
