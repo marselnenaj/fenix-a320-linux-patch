@@ -635,8 +635,146 @@ fn geometry_setup_failure_never_commits_the_staging_profile() {
         read(&fx.prefix.join("aircraft-installed-later")),
         "keep aircraft and account state"
     );
-    assert_eq!(fx.state()["state"], "preparing");
-    assert_eq!(fx.state()["previous_prefix"], previous["previous_prefix"]);
+    // The failed update reinstates the installed patch and removes its staging copy.
+    assert_eq!(fx.state(), previous);
+    assert!(glob(&fx.root.join("local"), "fenix-patch-").len() == 1);
+    core::verify_installed(&fx.mock, &fx.root, &previous).unwrap();
+    assert_eq!(fx.snapshot()["update_available"], true);
+    fx.install().unwrap();
+    assert_eq!(fx.state()["version"], "fixture-next");
+    assert_eq!(fx.state()["configured"], true);
+}
+
+/// A journal left by an installer that kept failed updates in "preparing".
+fn stuck_update(fx: &Fixture) -> Value {
+    let previous = fx.prepare_upgrade();
+    fx.mock
+        .geometry
+        .fail(Some(Error::patch("bad dependency checksum")));
+    assert_patch_error(fx.install(), "bad dependency checksum");
+    fx.mock.geometry.fail(None);
+    let backup = glob(&fx.root.join("private"), "fenix-patch-backup-")
+        .into_iter()
+        .find(|backup| backup.join("interrupted.json").is_file())
+        .unwrap();
+    let journal = fsx::read_json(&backup.join("interrupted.json")).unwrap();
+    assert_eq!(journal["state"], "preparing");
+    let work = fx.root.join(journal["work"].as_str().unwrap());
+    fs::create_dir_all(work.join("prefix/drive_c")).unwrap();
+    fsx::write_json(&fx.marker(), &journal).unwrap();
+    previous
+}
+
+#[test]
+fn unfinished_update_is_recovered_by_the_next_change() {
+    let fx = Fixture::new();
+    let previous = stuck_update(&fx);
+    let journal = fx.state();
+    // The status already shows the installed patch and offers the update again.
+    let snapshot = fx.snapshot();
+    assert_eq!(snapshot["installed"], true);
+    assert_eq!(snapshot["configured"], true);
+    assert_eq!(snapshot["update_available"], true);
+    assert!(
+        snapshot["message"]
+            .as_str()
+            .unwrap()
+            .contains("did not finish")
+    );
+    fx.install().unwrap();
+    let state = fx.state();
+    assert_eq!(state["state"], "installed");
+    assert_eq!(state["version"], "fixture-next");
+    assert_eq!(state["configured"], true);
+    assert_eq!(state["previous_prefix"], previous["previous_prefix"]);
+    assert!(!fx.root.join(journal["work"].as_str().unwrap()).exists());
+    assert_eq!(
+        read(&fx.prefix.join("aircraft-installed-later")),
+        "keep aircraft and account state"
+    );
+}
+
+#[test]
+fn unfinished_update_is_recovered_before_configuring() {
+    let fx = Fixture::new();
+    let previous = stuck_update(&fx);
+    // Restoring the original profile stays an explicit choice that keeps the journal.
+    let _ = core::configure(&fx.mock, fx.root.as_os_str(), &silent);
+    assert_eq!(fx.state()["state"], "installed");
+    assert_eq!(fx.state()["version"], previous["version"]);
+}
+
+#[test]
+fn changed_journal_is_not_recovered() {
+    let fx = Fixture::new();
+    stuck_update(&fx);
+    let mut journal = fx.state();
+    journal["previous_runner"] = json!("elsewhere");
+    fsx::write_json(&fx.marker(), &journal).unwrap();
+    assert_patch_error(fx.install(), "A previous patch transaction exists");
+    assert_eq!(fx.state(), journal);
+    assert_eq!(fx.snapshot()["installed"], false);
+}
+
+#[test]
+fn completed_updates_remove_their_profile_copies() {
+    let fx = Fixture::new();
+    fx.prepare_upgrade();
+    fx.install().unwrap();
+    let first = fx.state();
+    assert!(glob(&fx.root.join("local"), "msfs-prefix.before-fenix-update-").is_empty());
+    // A copy left by an interrupted commit contains the newer profile; keep it.
+    let kept = fx
+        .root
+        .join("local/msfs-prefix.before-fenix-update-20260101T000000-0123abcd");
+    fs::create_dir_all(&kept).unwrap();
+    // A copy of an earlier completed update, from an installer that kept them.
+    let old = fx
+        .root
+        .join("local/msfs-prefix.before-fenix-update-20260102T000000-4567cdef");
+    fs::create_dir_all(&old).unwrap();
+    let mut state = first.clone();
+    state["upgrade_previous_prefix"] =
+        json!("local/msfs-prefix.before-fenix-update-20260102T000000-4567cdef");
+    fsx::write_json(&fx.marker(), &state).unwrap();
+    let mut lock = fx.mock.lock();
+    lock["previous_releases"]["fixture-next"] =
+        json!({"files": lock["files"], "integration": lock["integration"]});
+    lock["version"] = json!("fixture-third");
+    fx.publish(&lock);
+    fx.install().unwrap();
+    assert_eq!(fx.state()["version"], "fixture-third");
+    assert!(!old.exists());
+    assert!(kept.is_dir());
+    assert_eq!(
+        glob(&fx.root.join("local"), "msfs-prefix.before-fenix-update-"),
+        vec![kept]
+    );
+}
+
+#[test]
+fn unconfigured_update_keeps_settings_untouched() {
+    let fx = Fixture::new();
+    fx.install().unwrap();
+    let mut state = fx.state();
+    state["configured"] = json!(false);
+    state["display_renderer"] = Value::Null;
+    fsx::write_json(&fx.marker(), &state).unwrap();
+    put(&fx.prefix.join(core::PROGRAM).join("Fenix.exe"), "fenix");
+    let mut lock = fx.mock.lock();
+    lock["previous_releases"] = json!({lock["version"].as_str().unwrap(): {"files": lock["files"], "integration": lock["integration"]}});
+    lock["version"] = json!("fixture-next");
+    gpu_overlay(&fx.bundle.join("payload"), &mut lock);
+    fx.publish(&lock);
+    fx.install().unwrap();
+    assert_eq!(fx.state()["version"], "fixture-next");
+    assert_eq!(fx.state()["configured"], false);
+    assert!(
+        !fx.prefix
+            .join(core::CONFIG)
+            .join("fenixConfig.xml")
+            .exists()
+    );
 }
 
 #[test]
